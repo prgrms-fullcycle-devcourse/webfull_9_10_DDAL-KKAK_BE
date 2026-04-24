@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 1. 린트 검사
+npx lint-staged
+
+# 2. 빌드 및 타입 검사
+npm run build

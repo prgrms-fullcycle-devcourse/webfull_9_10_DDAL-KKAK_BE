@@ -1,0 +1,83 @@
+{
+  "name": "travel-tick",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "dev": "doppler run -- tsx watch src/main.ts",
+    "env:download": "doppler secrets download --format env --no-file > .env",
+    "prebuild": "npm install && npm run lint",
+    "postinstall": "prisma generate",
+    "build": "tsc",
+    "start": "cross-env NODE_ENV=production node dist/main.js",
+    "deploy": "npm install --include=dev && prisma migrate deploy && tsc",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "lint:all": "eslint .",
+    "lint:all:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:format": "prisma format",
+    "prepare": "command -v husky >/dev/null && husky || true"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_DDAL-KKAK_BE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_DDAL-KKAK_BE/issues"
+  },
+  "homepage": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_DDAL-KKAK_BE#readme",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "http-status-codes": "^2.3.0",
+    "morgan": "^1.10.1",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.6.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
+    "prettier-plugin-prisma": "^5.0.0",
+    "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

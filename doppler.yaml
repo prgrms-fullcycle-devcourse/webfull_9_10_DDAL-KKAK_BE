@@ -1,0 +1,3 @@
+setup:
+  project: travel-tick # 프로젝트 이름
+  config: dev # 환경 선택

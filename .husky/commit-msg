@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 3. 커밋 메시지 형식 검사
+npx --no -- commitlint --edit "$1"

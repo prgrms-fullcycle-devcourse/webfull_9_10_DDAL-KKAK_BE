@@ -1,0 +1,14 @@
+# 빌드 및 의존성
+dist/
+node_modules/
+
+# 데이터베이스
+prisma/migrations/
+
+# 환경 변수 및 로그
+.env
+.env.*
+*.log
+
+# 기타 설정 파일
+package-lock.json
