@@ -3,6 +3,9 @@
 
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
+// -------------------------------------------
+// 1. Configuration (Datasource & Generator)
+// -------------------------------------------
 datasource db {
   provider = "postgresql"
 }
@@ -12,6 +15,41 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// -------------------------------------------
+// 2. Global Enums
+// -------------------------------------------
+enum SocialProvider {
+  KAKAO
+  GOOGLE
+}
+
+enum MoneyCurrency {
+  KRW
+  TRIP
+}
+
+enum FxMode {
+  FIXED
+  REALTIME
+}
+
+enum ReceiptStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ExpenseCategory {
+  FOOD
+  SHOPPING
+  TRANSPORT
+  TOUR
+  ETC
+}
+
+// -------------------------------------------
+// 3. Database Models
+// -------------------------------------------
 model User {
   id       String  @id @default(cuid())
   name     String?
@@ -19,4 +57,146 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  oauthAccount OAuthAccount[]
+  receipts     Receipt[]
+  trips        Trip[]
+}
+
+model OAuthAccount {
+  id                String         @id @default(cuid())
+  userId            String
+  provider          SocialProvider
+  providerAccountId String
+  profileImageUrl   String?
+  profileName       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Trip {
+  id                String    @id @default(cuid())
+  title             String
+  ownerUserId       String
+  tripCurrencyCode  String
+  defaultFxMode     FxMode    @default(FIXED)
+  fixedExchangeRate Decimal?  @db.Decimal(18, 6)
+  startDate         DateTime?
+  endDate           DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner        User          @relation(fields: [ownerUserId], references: [id])
+  participants Participant[]
+  receipts     Receipt[]
+  expenses     Expense[]
+}
+
+model Participant {
+  id     String @id @default(cuid())
+  tripId String
+  name   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trip          Trip           @relation(fields: [tripId], references: [id])
+  expenses      Expense[]
+  expenseShares ExpenseShare[]
+
+  @@unique([tripId, name])
+}
+
+model ExchangeRate {
+  id        String    @id @default(cuid())
+  baseCode  String
+  quoteCode String
+  rate      Decimal   @db.Decimal(18, 6)
+  provider  String
+  fetchedAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  expenses Expense[]
+
+  @@unique([baseCode, quoteCode, fetchedAt])
+  @@index([baseCode, quoteCode, fetchedAt(sort: Desc)])
+}
+
+model Receipt {
+  id              String        @id @default(cuid())
+  tripId          String
+  createdByUserId String
+  imageUrl        String
+  ocrText         String?       @db.Text
+  parsedJson      Json?
+  status          ReceiptStatus @default(PENDING)
+  errorMessage    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator  User      @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@index([tripId])
+  @@index([createdByUserId])
+  @@index([status])
+}
+
+model Expense {
+  id                 String  @id @default(cuid())
+  tripId             String
+  receiptId          String?
+  payerParticipantId String
+
+  title     String
+  category  ExpenseCategory?
+  note      String?
+  spentAt   DateTime
+  createdAt DateTime         @default(now())
+
+  currency       MoneyCurrency
+  amountOriginal Decimal       @db.Decimal(18, 2)
+
+  fxMode          FxMode    @default(FIXED)
+  fxRateTripToKrw Decimal   @db.Decimal(18, 6)
+  fxRateId        String?
+  fxRateFetchedAt DateTime?
+
+  amountKrw Decimal @db.Decimal(18, 2)
+
+  trip          Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  receipt       Receipt?       @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  payer         Participant    @relation(fields: [payerParticipantId], references: [id], onDelete: Restrict)
+  exchangeRate  ExchangeRate?  @relation(fields: [fxRateId], references: [id], onDelete: SetNull)
+  expenseShares ExpenseShare[]
+
+  @@index([tripId])
+  @@index([receiptId])
+  @@index([payerParticipantId])
+  @@index([spentAt])
+  @@index([fxRateId])
+}
+
+model ExpenseShare {
+  id            String @id @default(cuid())
+  expenseId     String
+  participantId String
+
+  shareAmountKrw Decimal @db.Decimal(18, 2)
+  // isSettled      Boolean @default(false)
+
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, participantId])
+  @@index([participantId])
 }
