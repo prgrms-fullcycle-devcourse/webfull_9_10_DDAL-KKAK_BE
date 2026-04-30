@@ -33,6 +33,4 @@ app.use('/expenses', expensesRouter);
 app.use('/trips', tripsRouter);
 app.use(errorHandler);
 
-app.use(errorHandler);
-
 export default app;
