@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "dev": "doppler run -- tsx watch src/main.ts",
+    "dev": "doppler run --project travel-tick --config dev -- tsx watch src/main.ts",
     "env:download": "doppler secrets download --format env --no-file > .env",
     "prebuild": "npm install && npm run lint",
     "postinstall": "prisma generate",
@@ -55,6 +55,7 @@
     "helmet": "^8.1.0",
     "http-status-codes": "^2.3.0",
     "morgan": "^1.10.1",
+    "multer": "^2.1.1",
     "pg": "^8.20.0"
   },
   "devDependencies": {
@@ -64,6 +65,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.6.0",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
