@@ -4,7 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { StatusCodes } from 'http-status-codes';
 
-import { errorHandler } from './middlewares/errorHandler.middleware.js';
+import { errorHandler } from './middlewares/error-handler.middleware.js';
 import { logger } from './middlewares/logger.middleware.js';
 import authRouter from './routes/auth.routes.js';
 import currenciesRouter from './routes/currencies.routes.js';
@@ -31,6 +31,7 @@ app.use('/auth', authRouter);
 app.use('/currencies', currenciesRouter);
 app.use('/expenses', expensesRouter);
 app.use('/trips', tripsRouter);
+app.use(errorHandler);
 
 app.use(errorHandler);
 
