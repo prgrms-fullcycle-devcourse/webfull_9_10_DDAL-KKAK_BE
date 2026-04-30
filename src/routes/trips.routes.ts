@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { StatusCodes } from 'http-status-codes';
+
+import { tripController } from '../controllers/trips.controller.js';
 
 const router = Router();
 
-router.get('/', (_req, res) => res.status(StatusCodes.OK).send('Trips'));
+router.get('/', tripController.getTrips);
+router.post('/', tripController.createTrip);
 
 export default router;
