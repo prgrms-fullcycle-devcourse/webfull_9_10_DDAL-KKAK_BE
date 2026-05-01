@@ -2,23 +2,15 @@ import { type Request, type RequestHandler } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import multer, { type FileFilterCallback } from 'multer';
 
+import { UPLOAD_CONSTANTS } from '../constants/upload.js';
 import { AppError } from '../errors/app-error.js';
-
-const allowedMimeTypes = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-]);
-
-const maxFileSize = 10 * 1024 * 1024;
 
 const fileFilter = (
   _req: Request,
   file: { mimetype: string },
   callback: FileFilterCallback,
 ): void => {
-  if (!allowedMimeTypes.has(file.mimetype)) {
+  if (!UPLOAD_CONSTANTS.ALLOWED_MIME_TYPES.has(file.mimetype)) {
     callback(
       new AppError(
         StatusCodes.UNSUPPORTED_MEDIA_TYPE,
@@ -38,6 +30,6 @@ export const uploadReceiptImage: RequestHandler = multer({
   storage: multer.memoryStorage(),
   fileFilter,
   limits: {
-    fileSize: maxFileSize,
+    fileSize: UPLOAD_CONSTANTS.MAX_FILE_SIZE,
   },
 }).single('receipt');
