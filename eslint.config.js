@@ -296,6 +296,8 @@ export default [
         { blankLine: 'always', prev: 'case', next: 'case' }, // case 사이
         { blankLine: 'always', prev: 'default', next: 'case' }, // default-case 사이
         { blankLine: 'always', prev: '*', next: 'return' }, // return 직전
+        { blankLine: 'any', prev: 'directive', next: 'return' },
+        { blankLine: 'any', prev: 'expression', next: 'return' },
       ],
     },
   },
