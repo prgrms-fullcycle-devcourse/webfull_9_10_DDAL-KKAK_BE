@@ -10,8 +10,14 @@ export const tripRepository = {
         tripCurrencyCode: input.tripCurrencyCode,
         defaultFxMode: input.defaultFxMode ?? 'FIXED',
         fixedExchangeRate: input.fixedExchangeRate ?? null,
-        startDate: input.startDate ? new Date(input.startDate) : null,
-        endDate: input.endDate ? new Date(input.endDate) : null,
+        startDate:
+          input.startDate !== null && input.startDate !== undefined
+            ? new Date(input.startDate)
+            : null,
+        endDate:
+          input.endDate !== null && input.endDate !== undefined
+            ? new Date(input.endDate)
+            : null,
       },
     });
   },

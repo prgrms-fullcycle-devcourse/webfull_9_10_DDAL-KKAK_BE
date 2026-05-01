@@ -1,4 +1,4 @@
-import { type Request } from 'express';
+import { type Request, type RequestHandler } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import multer, { type FileFilterCallback } from 'multer';
 
@@ -34,7 +34,7 @@ const fileFilter = (
   callback(null, true);
 };
 
-export const uploadReceiptImage = multer({
+export const uploadReceiptImage: RequestHandler = multer({
   storage: multer.memoryStorage(),
   fileFilter,
   limits: {
