@@ -71,37 +71,56 @@ export default [
         {
           selector: 'default',
           format: ['camelCase'],
-          filter: { regex: '^_', match: false }, // 인자(parameter) 중 사용하지 않는 것은 언더바 허용
-          leadingUnderscore: 'forbid', // _로 시작하는 것 금지
+          leadingUnderscore: 'allow',
+          trailingUnderscore: 'forbid',
         },
 
-        // 3-2. 변수 및 함수: 카멜 케이스 사용
+        // 3-2. 변수(variable): camelCase가 기본이지만, 구조 분해 할당은 모든 케이스 허용
         {
-          selector: ['variable', 'function'],
+          selector: 'variable',
+          format: ['camelCase', 'UPPER_CASE', 'snake_case'],
+          leadingUnderscore: 'allow',
+        },
+
+        // 3-3. 함수(function): 무조건 camelCase
+        {
+          selector: 'function',
           format: ['camelCase'],
         },
 
-        // 3-3. 상수: 영문 대문자 스네이크 케이스(UPPER_CASE) 사용
+        // 3-4. 상수: 영문 대문자 스네이크 케이스(UPPER_CASE) 사용
         {
           selector: 'variable',
           modifiers: ['const', 'global'],
-          format: ['UPPER_CASE', 'camelCase'], // 전역 상수는 대문자, 일반 const는 카멜 허용
+          format: ['UPPER_CASE', 'camelCase', 'snake_case'],
         },
 
-        // 3-4. 생성자(클래스), 인터페이스, 타입: 대문자 카멜 케이스(PascalCase) 사용
+        // 3-5. 생성자(클래스), 인터페이스, 타입: 대문자 카멜 케이스(PascalCase) 사용
         {
-          selector: ['class', 'interface', 'typeAlias', 'enum'],
+          selector: [
+            'class',
+            'interface',
+            'typeAlias',
+            'enum',
+            'typeParameter',
+          ],
           format: ['PascalCase'],
         },
 
-        // 3-5. 객체 리터럴 속성: 카멜 케이스 기본, 하지만 상수는 대문자 허용
+        // 3-6. 객체 리터럴 속성: 카멜 케이스 기본, 하지만 상수는 대문자 허용
         {
-          selector: 'objectLiteralProperty',
-          format: ['camelCase', 'UPPER_CASE'],
+          selector: ['property', 'objectLiteralProperty', 'typeProperty'],
+          format: null,
+        },
+
+        // 3-7. Enum 멤버: UPPER_CASE 사용
+        {
+          selector: 'enumMember',
+          format: ['UPPER_CASE', 'PascalCase'],
         },
       ],
 
-      // 3-6. 예약어 사용 금지: 변수 섀도잉 (13-1에서 관리)
+      // 3-8. 예약어 사용 금지: 변수 섀도잉 (13-1에서 관리)
 
       // 4. 전역 변수 사용 제한
       'no-implicit-globals': 'error',

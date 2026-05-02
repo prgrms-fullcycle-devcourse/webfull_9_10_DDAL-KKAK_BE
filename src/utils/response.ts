@@ -2,12 +2,12 @@ import { type Response } from 'express';
 
 import type { ErrorResponse, SuccessResponse } from '../types/api.types.js';
 
-export const sendSuccess = <tData>(
+export const sendSuccess = <T>(
   res: Response,
   status: number,
   message: string,
-  data: tData,
-): Response<SuccessResponse<tData>> => {
+  data: T,
+): Response<SuccessResponse<T>> => {
   return res.status(status).json({
     success: true,
     status,
