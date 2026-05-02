@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import config from '../config/index.js';
 import { AppError } from '../errors/app-error.js';
 import * as authService from '../services/auth.service.js';
 import { sendSuccess } from '../utils/response.js';
@@ -44,9 +45,7 @@ export const finishLogin = async (
 
     // refreshToken을 쿠키에 저장
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      ...config.cookie,
       maxAge: 14 * 24 * 60 * 60 * 1000,
     });
 
