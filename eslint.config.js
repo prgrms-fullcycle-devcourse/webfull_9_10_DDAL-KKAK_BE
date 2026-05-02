@@ -93,9 +93,15 @@ export default [
           selector: ['class', 'interface', 'typeAlias', 'enum'],
           format: ['PascalCase'],
         },
+
+        // 3-5. 객체 리터럴 속성: 카멜 케이스 기본, 하지만 상수는 대문자 허용
+        {
+          selector: 'objectLiteralProperty',
+          format: ['camelCase', 'UPPER_CASE'],
+        },
       ],
 
-      // 3-5. 예약어 사용 금지: 변수 섀도잉 (13-1에서 관리)
+      // 3-6. 예약어 사용 금지: 변수 섀도잉 (13-1에서 관리)
 
       // 4. 전역 변수 사용 제한
       'no-implicit-globals': 'error',
@@ -290,6 +296,8 @@ export default [
         { blankLine: 'always', prev: 'case', next: 'case' }, // case 사이
         { blankLine: 'always', prev: 'default', next: 'case' }, // default-case 사이
         { blankLine: 'always', prev: '*', next: 'return' }, // return 직전
+        { blankLine: 'any', prev: 'directive', next: 'return' },
+        { blankLine: 'any', prev: 'expression', next: 'return' },
       ],
     },
   },

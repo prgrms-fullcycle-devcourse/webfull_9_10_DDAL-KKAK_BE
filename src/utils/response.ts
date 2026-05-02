@@ -1,33 +1,19 @@
 import { type Response } from 'express';
 
-type ApiSuccessResponse<tData> = {
-  success: true;
-  status: number;
-  message: string;
-  data: tData;
-};
-
-type ApiErrorResponse = {
-  success: false;
-  status: number;
-  message: string;
-  error: {
-    code: string;
-    detail: string;
-  };
-};
+import type { ErrorResponse, SuccessResponse } from '../types/api.types.js';
 
 export const sendSuccess = <tData>(
   res: Response,
   status: number,
   message: string,
   data: tData,
-): Response<ApiSuccessResponse<tData>> => {
+): Response<SuccessResponse<tData>> => {
   return res.status(status).json({
     success: true,
     status,
     message,
     data,
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -37,7 +23,7 @@ export const sendError = (
   message: string,
   code: string,
   detail: string,
-): Response<ApiErrorResponse> => {
+): Response<ErrorResponse> => {
   return res.status(status).json({
     success: false,
     status,
@@ -46,5 +32,6 @@ export const sendError = (
       code,
       detail,
     },
+    timestamp: new Date().toISOString(),
   });
 };

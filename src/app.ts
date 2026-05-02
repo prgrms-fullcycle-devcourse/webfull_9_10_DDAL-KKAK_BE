@@ -31,6 +31,8 @@ app.use('/auth', authRouter);
 app.use('/currencies', currenciesRouter);
 app.use('/expenses', expensesRouter);
 app.use('/trips', tripsRouter);
+
+// 전역 에러 핸들러
 app.use(errorHandler);
 
 export default app;
