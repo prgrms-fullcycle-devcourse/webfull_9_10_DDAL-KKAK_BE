@@ -70,11 +70,25 @@ const fetchSocialAccessToken = async (
         },
       });
 
+      if (!response.ok) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          'INVALID_OAUTH_CODE',
+          '비정상적인 요청입니다.',
+          '인증 코드 값이 유효하지 않습니다.',
+        );
+      }
+
       const kakaoToken = (await response.json()) as KakaoToken;
 
       return kakaoToken.access_token;
     } catch (err) {
       console.error(err);
+
+      if (err instanceof AppError) {
+        throw err;
+      }
+
       throw new AppError(
         StatusCodes.BAD_GATEWAY,
         'OAUTH_PLATFORM_ERROR',
