@@ -4,7 +4,10 @@ import { StatusCodes } from 'http-status-codes';
 import { AppError } from '../errors/app-error.js';
 import * as authService from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
-import { setRefreshTokenCookie } from '../utils/auth.utils.js';
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from '../utils/auth.utils.js';
 import { sendSuccess } from '../utils/response.js';
 
 interface LoginRequestParams {
@@ -137,6 +140,8 @@ export const refreshUser = async (
       { accessToken, tokenType, expiresIn },
     );
   } catch (err) {
+    clearRefreshTokenCookie(res);
+
     if (err instanceof AppError) {
       return next(err);
     }
@@ -144,5 +149,7 @@ export const refreshUser = async (
     if (err instanceof Error) {
       return next(err);
     }
+
+    return next(err);
   }
 };

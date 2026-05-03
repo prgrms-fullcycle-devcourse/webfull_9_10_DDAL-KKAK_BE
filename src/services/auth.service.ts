@@ -8,7 +8,7 @@ import { AppError } from '../errors/app-error.js';
 import type { SocialProvider } from '../generated/prisma/enums.js';
 import * as userRepository from '../repositories/auth.repository.js';
 import type { JwtPayload, KakaoToken, KakaoUser } from '../types/auth.types.js';
-import { hashData } from '../utils/crypto.util.js';
+import { compareData, hashData } from '../utils/crypto.util.js';
 
 const isValidProvider = (p: string): p is SocialProvider => {
   return ['KAKAO', 'GOOGLE'].includes(p);
@@ -206,13 +206,26 @@ export const refreshAccessToken = async (refreshToken: string) => {
 
     const user = await userRepository.findByUserId(userId);
 
-    if (user === null || user.refreshToken !== refreshToken) {
+    if (user === null || user.refreshToken === null) {
       // 리프래쉬 토큰이 탈취된 가능성
-      if (user) {
-        await userRepository.deleteRefreshToken(user.id);
-      }
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        'INVALID_REFRESH_TOKEN',
+        '인증 정보가 유효하지 않습니다.',
+        '유효하지 않은 형식의 리프레시 토큰입니다.',
+      );
+    }
 
-      throw jwt.JsonWebTokenError;
+    const isMatch = await compareData(refreshToken, user.refreshToken);
+    if (!isMatch) {
+      await userRepository.deleteRefreshToken(user.id);
+
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        'TOKEN_REUSE_DETECTED',
+        '보안 경고: 비정상적인 접근입니다.',
+        '이미 사용된 리프레시 토큰입니다. 보안을 위해 모든 기기에서 로그아웃됩니다.',
+      );
     }
 
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
