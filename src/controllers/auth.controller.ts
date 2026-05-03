@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import config from '../config/index.js';
 import { AppError } from '../errors/app-error.js';
 import * as authService from '../services/auth.service.js';
+import type { AuthenticatedRequest } from '../types/auth.types.js';
 import { sendSuccess } from '../utils/response.js';
 
 interface LoginRequestParams {
@@ -76,5 +77,31 @@ export const finishLogin = async (
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const {
+      user: { sub: userId },
+    } = req as AuthenticatedRequest;
+
+    // 사용자 로그아웃 처리
+    await authService.logoutUser(userId);
+
+    return sendSuccess(
+      res,
+      StatusCodes.OK,
+      '로그아웃이 성공적으로 완료되었습니다.',
+      null,
+    );
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return next(err);
+    }
   }
 };
