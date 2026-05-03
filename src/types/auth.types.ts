@@ -1,3 +1,5 @@
+import type { Request } from 'express';
+
 export interface AuthParams {
   urls: {
     base: string;
@@ -46,3 +48,14 @@ export interface KakaoUser {
     };
   };
 }
+
+export interface JwtPayload {
+  sub: string;
+  iss: string;
+  iat: number;
+  exp: number;
+}
+
+export type AuthenticatedRequest = Request & {
+  user: JwtPayload;
+};
