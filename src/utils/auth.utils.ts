@@ -11,5 +11,5 @@ export const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
 };
 
 export const clearRefreshTokenCookie = (res: Response) => {
-  res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken', config.cookie);
 };
