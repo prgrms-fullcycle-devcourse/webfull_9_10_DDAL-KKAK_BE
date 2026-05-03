@@ -7,7 +7,7 @@ import config from '../config/index.js';
 import { AppError } from '../errors/app-error.js';
 import type { SocialProvider } from '../generated/prisma/enums.js';
 import * as userRepository from '../repositories/auth.repository.js';
-import type { KakaoToken, KakaoUser } from '../types/auth.types.js';
+import type { JwtPayload, KakaoToken, KakaoUser } from '../types/auth.types.js';
 import { hashData } from '../utils/crypto.util.js';
 
 const isValidProvider = (p: string): p is SocialProvider => {
@@ -193,4 +193,60 @@ export const loginWithSocial = async (providerName: string, code: string) => {
 export const logoutUser = async (userId: string) => {
   // 사용자의 Refresh Token 삭제
   await userRepository.deleteRefreshToken(userId);
+};
+
+export const refreshAccessToken = async (refreshToken: string) => {
+  try {
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET as string,
+    ) as JwtPayload;
+
+    const userId = decoded.sub;
+
+    const user = await userRepository.findByUserId(userId);
+
+    if (user === null || user.refreshToken !== refreshToken) {
+      // 리프래쉬 토큰이 탈취된 가능성
+      if (user) {
+        await userRepository.deleteRefreshToken(user.id);
+      }
+
+      throw jwt.JsonWebTokenError;
+    }
+
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      generateTokens(userId);
+
+    await userRepository.updateRefreshToken(userId, newRefreshToken);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    };
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      // 리프래쉬 토큰 만료
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        'EXPIRED_REFRESH_TOKEN',
+        '세션이 만료되었습니다.',
+        '리프레시 토큰이 만료되었습니다. 다시 로그인하여 세션을 시작하세요.',
+      );
+    }
+
+    if (err instanceof jwt.JsonWebTokenError) {
+      // 유효하지 않은 리프래쉬 토큰
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        'INVALID_REFRESH_TOKEN',
+        '인증 정보가 유효하지 않습니다.',
+        '유효하지 않은 형식의 리프레시 토큰입니다.',
+      );
+    }
+
+    throw err;
+  }
 };
