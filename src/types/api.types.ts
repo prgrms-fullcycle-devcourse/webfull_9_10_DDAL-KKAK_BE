@@ -1,8 +1,8 @@
-export type SuccessResponse<tData> = {
+export type SuccessResponse<T> = {
   success: true;
   status: number;
   message: string;
-  data: tData;
+  data: T;
   timestamp: string;
 };
 

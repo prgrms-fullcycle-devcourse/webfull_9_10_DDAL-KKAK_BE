@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { StatusCodes } from 'http-status-codes';
 
-const router = Router();
+import { finishLogin, startLogin } from '../controllers/auth.controller.js';
 
-router.get('/', (_req, res) => res.status(StatusCodes.OK).send('Auth'));
+const router = Router({ mergeParams: true });
+
+router.get('/:provider/login', startLogin);
+router.get('/:provider/callback', finishLogin);
 
 export default router;
