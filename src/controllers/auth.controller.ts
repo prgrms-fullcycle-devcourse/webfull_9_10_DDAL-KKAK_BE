@@ -1,10 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import config from '../config/index.js';
 import { AppError } from '../errors/app-error.js';
 import * as authService from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from '../utils/auth.utils.js';
 import { sendSuccess } from '../utils/response.js';
 
 interface LoginRequestParams {
@@ -63,10 +66,7 @@ export const finishLogin = async (
       await authService.loginWithSocial(provider as string, code as string);
 
     // refreshToken을 쿠키에 저장
-    res.cookie('refreshToken', refreshToken, {
-      ...config.cookie,
-      maxAge: 14 * 24 * 60 * 60 * 1000,
-    });
+    setRefreshTokenCookie(res, refreshToken);
 
     sendSuccess(res, StatusCodes.OK, '로그인이 성공적으로 완료되었습니다.', {
       tokenInfo: {
@@ -103,5 +103,53 @@ export const logoutUser = async (
     if (err instanceof Error) {
       return next(err);
     }
+  }
+};
+
+export const refreshUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { refreshToken: oldRefreshToken } = req.cookies;
+
+    if (oldRefreshToken === undefined) {
+      // 갱신 토큰이 쿠키에 존재하지 않음
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        'MISSING_REFRESH_TOKEN',
+        '인증 정보가 없습니다.',
+        '인증을 위한 리프레시 토큰이 쿠키에 존재하지 않습니다.',
+      );
+    }
+
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      tokenType,
+      expiresIn,
+    } = await authService.refreshAccessToken(oldRefreshToken);
+
+    setRefreshTokenCookie(res, newRefreshToken);
+
+    return sendSuccess(
+      res,
+      StatusCodes.OK,
+      '토큰이 성공적으로 갱신되었습니다.',
+      { accessToken, tokenType, expiresIn },
+    );
+  } catch (err) {
+    clearRefreshTokenCookie(res);
+
+    if (err instanceof AppError) {
+      return next(err);
+    }
+
+    if (err instanceof Error) {
+      return next(err);
+    }
+
+    return next(err);
   }
 };

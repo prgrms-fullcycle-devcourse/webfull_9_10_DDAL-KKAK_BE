@@ -25,6 +25,18 @@ export const findBySocialId = async (
   return user;
 };
 
+export const findByUserId = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      refreshToken: true,
+    },
+  });
+
+  return user;
+};
+
 export const createUser = async (
   provider: SocialProvider,
   userData: KakaoUser,
