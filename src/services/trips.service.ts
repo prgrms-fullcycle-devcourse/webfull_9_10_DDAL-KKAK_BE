@@ -5,14 +5,6 @@ import { tripRepository } from '../repositories/trips.repository.js';
 import type { CreateTripInput, UpdateTripInput } from '../types/trips.types.js';
 
 function validateCreateInput(input: CreateTripInput) {
-  if (!input.ownerUserId?.trim()) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      'TRIP_001',
-      'ownerUserId는 필수입니다.',
-    );
-  }
-
   if (!input.title?.trim()) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -81,25 +73,20 @@ function validateCreateInput(input: CreateTripInput) {
 }
 
 export const tripService = {
-  async createTrip(input: CreateTripInput) {
-    validateCreateInput(input);
+  async createTrip(
+    ownerUserId: string,
+    input: Omit<CreateTripInput, 'ownerUserId'>,
+  ) {
+    validateCreateInput({ ...input, ownerUserId });
 
-    return tripRepository.create(input);
+    return tripRepository.create({ ...input, ownerUserId });
   },
 
   async getTrips(ownerUserId: string) {
-    if (!ownerUserId?.trim()) {
-      throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        'TRIP_001',
-        'ownerUserId는 필수입니다.',
-      );
-    }
-
     return tripRepository.findManyByOwner(ownerUserId);
   },
 
-  async getTripById(tripId: string) {
+  async getTripById(tripId: string, userId: string) {
     const trip = await tripRepository.findById(tripId);
 
     if (trip === null) {
@@ -107,13 +94,21 @@ export const tripService = {
         StatusCodes.NOT_FOUND,
         'TRIP_009',
         '여행을 찾을 수 없습니다.',
+      );
+    }
+
+    if (trip.ownerUserId !== userId) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'TRIP_010',
+        '접근 권한이 없습니다.',
       );
     }
 
     return trip;
   },
 
-  async updateTrip(tripId: string, input: UpdateTripInput) {
+  async updateTrip(tripId: string, userId: string, input: UpdateTripInput) {
     const trip = await tripRepository.findById(tripId);
 
     if (trip === null) {
@@ -121,6 +116,14 @@ export const tripService = {
         StatusCodes.NOT_FOUND,
         'TRIP_009',
         '여행을 찾을 수 없습니다.',
+      );
+    }
+
+    if (trip.ownerUserId !== userId) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'TRIP_010',
+        '접근 권한이 없습니다.',
       );
     }
 
@@ -189,7 +192,7 @@ export const tripService = {
     return tripRepository.update(tripId, input);
   },
 
-  async deleteTrip(tripId: string) {
+  async deleteTrip(tripId: string, userId: string) {
     const trip = await tripRepository.findById(tripId);
 
     if (trip === null) {
@@ -197,6 +200,14 @@ export const tripService = {
         StatusCodes.NOT_FOUND,
         'TRIP_009',
         '여행을 찾을 수 없습니다.',
+      );
+    }
+
+    if (trip.ownerUserId !== userId) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'TRIP_010',
+        '접근 권한이 없습니다.',
       );
     }
 
