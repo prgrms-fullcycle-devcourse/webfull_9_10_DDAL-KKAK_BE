@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma.js';
-import type { CreateTripInput } from '../types/trips.types.js';
+import type { CreateTripInput, UpdateTripInput } from '../types/trips.types.js';
 
 export const tripRepository = {
   create(input: CreateTripInput) {
@@ -26,6 +26,43 @@ export const tripRepository = {
     return prisma.trip.findMany({
       where: { ownerUserId },
       orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  findById(tripId: string) {
+    return prisma.trip.findUnique({
+      where: { id: tripId },
+    });
+  },
+
+  update(tripId: string, input: UpdateTripInput) {
+    return prisma.trip.update({
+      where: { id: tripId },
+      data: {
+        ...(input.title !== undefined && { title: input.title }),
+        ...(input.tripCurrencyCode !== undefined && {
+          tripCurrencyCode: input.tripCurrencyCode,
+        }),
+        ...(input.defaultFxMode !== undefined && {
+          defaultFxMode: input.defaultFxMode,
+        }),
+        ...(input.fixedExchangeRate !== undefined && {
+          fixedExchangeRate: input.fixedExchangeRate,
+        }),
+        ...(input.startDate !== undefined && {
+          startDate:
+            input.startDate !== null ? new Date(input.startDate) : null,
+        }),
+        ...(input.endDate !== undefined && {
+          endDate: input.endDate !== null ? new Date(input.endDate) : null,
+        }),
+      },
+    });
+  },
+
+  deleteById(tripId: string) {
+    return prisma.trip.delete({
+      where: { id: tripId },
     });
   },
 };
