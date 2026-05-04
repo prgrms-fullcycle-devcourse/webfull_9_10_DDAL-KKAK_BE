@@ -28,4 +28,23 @@ export const tripController = {
       next(error);
     }
   },
+
+  async getTripById(
+    req: Request<{ tripId: string }>,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { tripId } = req.params;
+      const trip = await tripService.getTripById(tripId);
+      sendSuccess(
+        res,
+        StatusCodes.OK,
+        '요청이 성공적으로 처리되었습니다.',
+        trip,
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
 };

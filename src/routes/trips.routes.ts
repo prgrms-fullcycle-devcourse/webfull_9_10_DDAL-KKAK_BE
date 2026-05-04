@@ -6,5 +6,6 @@ const router = Router();
 
 router.get('/', tripController.getTrips);
 router.post('/', tripController.createTrip);
+router.get('/:tripId', tripController.getTripById);
 
 export default router;

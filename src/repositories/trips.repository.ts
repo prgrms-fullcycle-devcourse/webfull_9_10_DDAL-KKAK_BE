@@ -28,4 +28,10 @@ export const tripRepository = {
       orderBy: { createdAt: 'desc' },
     });
   },
+
+  findById(tripId: string) {
+    return prisma.trip.findUnique({
+      where: { id: tripId },
+    });
+  },
 };
