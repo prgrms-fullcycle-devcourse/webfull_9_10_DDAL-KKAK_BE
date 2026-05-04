@@ -35,6 +35,12 @@ export const tripRepository = {
     });
   },
 
+  deleteById(tripId: string) {
+    return prisma.trip.delete({
+      where: { id: tripId },
+    });
+  },
+
   update(tripId: string, input: UpdateTripInput) {
     return prisma.trip.update({
       where: { id: tripId },

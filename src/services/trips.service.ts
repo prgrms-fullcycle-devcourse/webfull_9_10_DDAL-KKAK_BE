@@ -188,4 +188,18 @@ export const tripService = {
 
     return tripRepository.update(tripId, input);
   },
+
+  async deleteTrip(tripId: string) {
+    const trip = await tripRepository.findById(tripId);
+
+    if (trip === null) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        'TRIP_009',
+        '여행을 찾을 수 없습니다.',
+      );
+    }
+
+    await tripRepository.deleteById(tripId);
+  },
 };

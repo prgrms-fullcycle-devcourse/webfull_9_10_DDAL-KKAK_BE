@@ -61,4 +61,18 @@ export const tripController = {
       next(error);
     }
   },
+
+  async deleteTrip(
+    req: Request<{ tripId: string }>,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { tripId } = req.params;
+      await tripService.deleteTrip(tripId);
+      sendSuccess(res, StatusCodes.OK, '여행이 삭제되었습니다.', null);
+    } catch (error) {
+      next(error);
+    }
+  },
 };
