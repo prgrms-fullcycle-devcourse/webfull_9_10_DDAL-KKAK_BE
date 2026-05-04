@@ -1,0 +1,191 @@
+import crypto from 'crypto';
+
+import { StatusCodes } from 'http-status-codes';
+import jwt from 'jsonwebtoken';
+
+import config from '../config/index.js';
+import { AppError } from '../errors/app-error.js';
+import type { SocialProvider } from '../generated/prisma/enums.js';
+import * as userRepository from '../repositories/auth.repository.js';
+import type { KakaoToken, KakaoUser } from '../types/auth.types.js';
+import { hashData } from '../utils/crypto.util.js';
+
+const isValidProvider = (p: string): p is SocialProvider => {
+  return ['KAKAO', 'GOOGLE'].includes(p);
+};
+
+export const getSocialLoginInfo = (
+  providerName: string,
+): { redirectUrl: string; state: string } => {
+  const provider = providerName.toUpperCase();
+  const state = crypto.randomBytes(16).toString('hex');
+
+  if (!provider || !isValidProvider(provider)) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'INVALID_AUTH_PROVIDER',
+      '잘못된 요청입니다.',
+      "지원하지 않는 인증 제공자입니다. 'kakao' 또는 'google'만 사용 가능합니다.",
+    );
+  }
+
+  const {
+    params: { client_id, redirect_uri, response_type, scope },
+    urls: { base },
+  } = config.auth[provider];
+  const params = new URLSearchParams({
+    client_id,
+    redirect_uri,
+    response_type,
+    scope,
+    state,
+  });
+
+  return { redirectUrl: `${base}?${params}`, state };
+};
+
+const fetchSocialAccessToken = async (
+  provider: SocialProvider,
+  code: string,
+): Promise<string> => {
+  const {
+    params: { client_id, client_secret, redirect_uri },
+    urls: { token },
+  } = config.auth[provider];
+
+  const params = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id,
+    client_secret,
+    redirect_uri,
+    code,
+  }).toString();
+
+  if (provider === 'KAKAO') {
+    try {
+      const response = await fetch(`${token}?${params}`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json;charset=UTF-8',
+        },
+      });
+
+      if (!response.ok) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          'INVALID_OAUTH_CODE',
+          '비정상적인 요청입니다.',
+          '인증 코드 값이 유효하지 않습니다.',
+        );
+      }
+
+      const kakaoToken = (await response.json()) as KakaoToken;
+
+      return kakaoToken.access_token;
+    } catch (err) {
+      console.error(err);
+
+      if (err instanceof AppError) {
+        throw err;
+      }
+
+      throw new AppError(
+        StatusCodes.BAD_GATEWAY,
+        'OAUTH_PLATFORM_ERROR',
+        '인증 서버와 통신할 수 없습니다.',
+        '소셜 로그인 제공자(Provider) 서버의 응답이 지연되거나 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    }
+  }
+
+  if (provider === 'GOOGLE') {
+    return '';
+  }
+
+  return '';
+};
+
+const fetchSocialUserInfo = async (
+  provider: SocialProvider,
+  socialToken: string,
+) => {
+  const {
+    urls: { user },
+  } = config.auth[provider];
+
+  try {
+    const response = await fetch(user, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${socialToken}`,
+        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+      },
+    });
+
+    const userData = (await response.json()) as KakaoUser;
+
+    return userData;
+  } catch (err) {
+    console.error(err);
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      'USERINFO_FETCH_FAILED',
+      '유저 정보 요청에 실패했습니다.',
+    );
+  }
+};
+
+const generateTokens = (userId: string) => {
+  const accessTokenSecret = process.env.JWT_ACCESS_SECRET;
+  const refreshTokenSecret = process.env.JWT_REFRESH_SECRET;
+
+  if (accessTokenSecret === undefined || refreshTokenSecret === undefined) {
+    throw new Error('Missing Token Secret');
+  }
+
+  const accessToken = jwt.sign({ sub: userId }, accessTokenSecret, {
+    expiresIn: '1h',
+    issuer: 'travel-tick',
+  });
+
+  const refreshToken = jwt.sign({ sub: userId }, refreshTokenSecret, {
+    expiresIn: '14d',
+    issuer: 'travel-tick',
+  });
+
+  return { accessToken, refreshToken };
+};
+
+export const loginWithSocial = async (providerName: string, code: string) => {
+  const provider = providerName.toUpperCase() as SocialProvider;
+
+  // 토큰 요청
+  const socialToken = await fetchSocialAccessToken(provider, code);
+
+  // 토큰을 이용하여 사용자 정보 조회
+  const socialUser = await fetchSocialUserInfo(provider, socialToken);
+
+  const socialId = socialUser.id.toString();
+  let user = await userRepository.findBySocialId(provider, socialId);
+
+  // 사용자가 존재하지 않으면 생성
+  if (user === null) {
+    user = await userRepository.createUser(provider, socialUser);
+  }
+
+  // JWT 토큰 생성
+  const { accessToken, refreshToken } = generateTokens(user.id);
+
+  // 갱신 토큰 해싱
+  const hashedRefreshToken = await hashData(refreshToken);
+
+  // 갱신 토큰 DB 저장
+  await userRepository.updateRefreshToken(user.id, hashedRefreshToken);
+
+  return {
+    accessToken,
+    refreshToken,
+    tokenInfo: { grantType: 'bearer', expiresIn: 3600 },
+    user: { id: user.id, name: user.name, imageUrl: user.imageUrl },
+  };
+};
