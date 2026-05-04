@@ -95,3 +95,11 @@ export const deleteRefreshToken = async (userId: string) => {
     throw new Error('DB Error');
   }
 };
+
+export const deleteUser = async (userId: string) => {
+  return await prisma.user.delete({
+    where: {
+      id: userId,
+    },
+  });
+};

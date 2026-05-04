@@ -263,3 +263,19 @@ export const refreshAccessToken = async (refreshToken: string) => {
     throw err;
   }
 };
+
+export const withdrawUser = async (userId: string) => {
+  const user = await userRepository.findByUserId(userId);
+
+  if (user === null) {
+    // 사용자가 존재하지 않음
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'USER_NOT_FOUND',
+      '탈퇴를 진행할 수 없습니다.',
+      '해당 사용자를 찾을 수 없습니다. 이미 탈퇴 처리된 계정일 수 있습니다.',
+    );
+  }
+
+  await userRepository.deleteUser(userId);
+};

@@ -153,3 +153,36 @@ export const refreshUser = async (
     return next(err);
   }
 };
+
+export const withdrawUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const {
+      user: { sub: userId },
+    } = req as AuthenticatedRequest;
+
+    await authService.withdrawUser(userId);
+
+    clearRefreshTokenCookie(res);
+
+    return sendSuccess(
+      res,
+      StatusCodes.OK,
+      '회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.',
+      null,
+    );
+  } catch (err) {
+    if (err instanceof AppError) {
+      return next(err);
+    }
+
+    throw new AppError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'WITHDRAWAL_FAILED',
+      '회원 탈퇴 처리 중 오류가 발생했습니다.',
+    );
+  }
+};
