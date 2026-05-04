@@ -66,12 +66,14 @@ export const createReceiptOcrJob = async (
 
       const userId = getUserIdFromHeader(req);
       const currencyHint = req.body.currencyHint as string | undefined;
+      const receiptLocale = req.body.receiptLocale as string | undefined;
       const createJobParams = {
         tripId,
         userId,
         imageBuffer: receiptFile.buffer,
         originalFileName: receiptFile.originalname,
         ...(currencyHint !== undefined && { currencyHint }),
+        ...(receiptLocale !== undefined && { receiptLocale }),
       };
       const result = await createOcrJob(createJobParams);
 
