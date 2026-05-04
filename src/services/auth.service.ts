@@ -189,3 +189,8 @@ export const loginWithSocial = async (providerName: string, code: string) => {
     user: { id: user.id, name: user.name, imageUrl: user.imageUrl },
   };
 };
+
+export const logoutUser = async (userId: string) => {
+  // 사용자의 Refresh Token 삭제
+  await userRepository.deleteRefreshToken(userId);
+};

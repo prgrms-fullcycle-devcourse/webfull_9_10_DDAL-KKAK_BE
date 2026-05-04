@@ -69,3 +69,17 @@ export const updateRefreshToken = async (
     throw new Error('DB Error');
   }
 };
+
+export const deleteRefreshToken = async (userId: string) => {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        refreshToken: null,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    throw new Error('DB Error');
+  }
+};
