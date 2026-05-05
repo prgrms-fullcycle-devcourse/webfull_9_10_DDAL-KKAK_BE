@@ -9,7 +9,7 @@
     "prebuild": "npm install && npm run lint",
     "postinstall": "prisma generate",
     "build": "tsc",
-    "start": "cross-env NODE_ENV=production node dist/main.js",
+    "start": "doppler run --project travel-tick --config stg -- node dist/main.js",
     "deploy": "npm install --include=dev && prisma migrate deploy && tsc",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
