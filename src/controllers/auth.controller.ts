@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import config from '../config/index.js';
 import { AppError } from '../errors/app-error.js';
 import * as authService from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
@@ -19,7 +20,11 @@ export const startLogin = (req: Request<LoginRequestParams>, res: Response) => {
 
   const { redirectUrl, state } = authService.getSocialLoginInfo(provider);
 
-  req.session.authState = state;
+  res.cookie('oauth_state', state, {
+    ...config.cookie.option,
+    maxAge: 1000 * 60 * 5,
+    signed: true,
+  });
 
   res.redirect(redirectUrl);
 };
@@ -33,7 +38,7 @@ export const finishLogin = async (
     const { provider } = req.params;
     const { code, state, error } = req.query;
 
-    if (state === undefined || state !== req.session.authState) {
+    if (state === undefined || state !== req.signedCookies.oauth_state) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
         'CSRF_ERROR',
@@ -60,7 +65,10 @@ export const finishLogin = async (
       );
     }
 
-    delete req.session.authState;
+    res.clearCookie('oauth_state', {
+      ...config.cookie.option,
+      signed: true,
+    });
 
     const { refreshToken, accessToken, tokenInfo, user } =
       await authService.loginWithSocial(provider as string, code as string);

@@ -5,11 +5,11 @@ import { COOKIE_CONSTANTS } from '../constants/cookie.js';
 
 export const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
-    ...config.cookie,
+    ...config.cookie.option,
     maxAge: COOKIE_CONSTANTS['14d'],
   });
 };
 
 export const clearRefreshTokenCookie = (res: Response) => {
-  res.clearCookie('refreshToken', config.cookie);
+  res.clearCookie('refreshToken', config.cookie.option);
 };
