@@ -1,13 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 
+import { isSupportedCurrency } from '../constants/currency.js';
 import { AppError } from '../errors/app-error.js';
 import * as exchangeRateRepository from '../repositories/currencies.repository.js';
 
-const SUPPORTED_CURRENCIES = ['KRW', 'USD', 'JPY', 'EUR', 'CNY', 'GBP'];
-
 export const getLatestRates = async (base: string, quoteCodes: string[]) => {
   const baseCode = base.toUpperCase();
-  if (!SUPPORTED_CURRENCIES.includes(baseCode)) {
+  if (!isSupportedCurrency(baseCode)) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       'INVALID_CURRENCY_CODE',
@@ -18,7 +17,7 @@ export const getLatestRates = async (base: string, quoteCodes: string[]) => {
 
   if (quoteCodes.length > 0) {
     const unsupportedCodes = quoteCodes.filter(
-      code => !SUPPORTED_CURRENCIES.includes(code),
+      code => !isSupportedCurrency(code),
     );
 
     if (unsupportedCodes.length > 0) {

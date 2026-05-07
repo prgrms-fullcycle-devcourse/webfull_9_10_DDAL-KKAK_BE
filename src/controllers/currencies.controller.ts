@@ -1,13 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import { CURRENCY_CONSTANTS } from '../constants/currency.js';
 import { AppError } from '../errors/app-error.js';
 import * as exchangeRateService from '../services/currencies.service.js';
 import { sendSuccess } from '../utils/response.js';
 
-const CURRENCY_FORMAT_REGEX = /^[a-zA-z]{3}$/i;
-
-const isInvalidFormat = (code: string) => !CURRENCY_FORMAT_REGEX.test(code);
+const isInvalidFormat = (code: string) =>
+  !CURRENCY_CONSTANTS.CURRENCY_FORMAT_REGEX.test(code);
 
 export const getCurrencies = async (
   req: Request,
@@ -15,10 +15,11 @@ export const getCurrencies = async (
   next: NextFunction,
 ) => {
   try {
-    const { base = 'KRW', symbols } = req.query as {
-      base?: string;
-      symbols?: string;
-    };
+    const { base = CURRENCY_CONSTANTS.DEFAULT_BASE_CURRENCY, symbols } =
+      req.query as {
+        base?: string;
+        symbols?: string;
+      };
     if (isInvalidFormat(base)) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
