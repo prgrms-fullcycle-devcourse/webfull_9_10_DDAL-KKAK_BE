@@ -85,6 +85,12 @@ export const finishLogin = async (req: Request, res: Response) => {
         `${process.env.ALLOWED_ORIGINS}/login?err=${err.code}`,
       );
     }
+
+    if (err instanceof Error) {
+      return res.redirect(
+        `${process.env.ALLOWED_ORIGINS}/login?err=${err.name}`,
+      );
+    }
   }
 };
 
