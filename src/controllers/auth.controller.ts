@@ -7,6 +7,7 @@ import * as authService from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
 import {
   clearRefreshTokenCookie,
+  setAccessTokenCookie,
   setRefreshTokenCookie,
 } from '../utils/auth.utils.js';
 import { sendSuccess } from '../utils/response.js';
@@ -29,11 +30,7 @@ export const startLogin = (req: Request<LoginRequestParams>, res: Response) => {
   res.redirect(redirectUrl);
 };
 
-export const finishLogin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const finishLogin = async (req: Request, res: Response) => {
   try {
     const { provider } = req.params;
     const { code, state, error } = req.query;
@@ -70,21 +67,24 @@ export const finishLogin = async (
       signed: true,
     });
 
-    const { refreshToken, accessToken, tokenInfo, user } =
-      await authService.loginWithSocial(provider as string, code as string);
+    const { refreshToken, accessToken } = await authService.loginWithSocial(
+      provider as string,
+      code as string,
+    );
+
+    // accessToken을 쿠키에 저장
+    setAccessTokenCookie(res, accessToken);
 
     // refreshToken을 쿠키에 저장
     setRefreshTokenCookie(res, refreshToken);
 
-    sendSuccess(res, StatusCodes.OK, '로그인이 성공적으로 완료되었습니다.', {
-      tokenInfo: {
-        accessToken,
-        ...tokenInfo,
-      },
-      user,
-    });
+    return res.redirect(`${process.env.ALLOWED_ORIGINS}/`);
   } catch (err) {
-    next(err);
+    if (err instanceof AppError) {
+      return res.redirect(
+        `${process.env.ALLOWED_ORIGINS}/login?err=${err.code}`,
+      );
+    }
   }
 };
 
