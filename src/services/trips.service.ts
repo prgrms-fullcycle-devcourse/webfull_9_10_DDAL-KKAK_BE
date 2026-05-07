@@ -128,7 +128,7 @@ export const tripService = {
     }
 
     if (
-      input.defaultFxMode &&
+      input.defaultFxMode !== undefined &&
       !['FIXED', 'REALTIME'].includes(input.defaultFxMode)
     ) {
       throw new AppError(
@@ -181,7 +181,11 @@ export const tripService = {
     const endDate =
       input.endDate !== undefined ? input.endDate : trip.endDate?.toISOString();
 
-    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    if (
+      typeof startDate === 'string' &&
+      typeof endDate === 'string' &&
+      new Date(endDate) < new Date(startDate)
+    ) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
         'TRIP_008',
