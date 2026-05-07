@@ -1,5 +1,3 @@
-import { createWorker } from 'tesseract.js';
-
 import type {
   ReceiptOcrEngine,
   ReceiptOcrEngineInput,
@@ -7,6 +5,7 @@ import type {
 } from './receipt-ocr-engine.interface.js';
 import { parseReceiptFromPlainText } from './receipt-text-parser.js';
 import { resolveTesseractLangs } from './tesseract-lang-resolver.js';
+import { tesseractWorkerPool } from './tesseract-worker-pool.js';
 
 export class TesseractReceiptOcrEngine implements ReceiptOcrEngine {
   async recognize(
@@ -20,7 +19,7 @@ export class TesseractReceiptOcrEngine implements ReceiptOcrEngine {
         currencyHint: input.currencyHint,
       }),
     });
-    const worker = await createWorker(langs);
+    const worker = await tesseractWorkerPool.acquire(langs);
 
     try {
       const { data } = await worker.recognize(input.imageBuffer);
@@ -29,7 +28,7 @@ export class TesseractReceiptOcrEngine implements ReceiptOcrEngine {
 
       return { parsed, rawText };
     } finally {
-      await worker.terminate();
+      tesseractWorkerPool.release(langs, worker);
     }
   }
 }

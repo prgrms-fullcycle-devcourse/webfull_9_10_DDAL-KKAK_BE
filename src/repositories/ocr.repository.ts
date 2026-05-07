@@ -67,3 +67,9 @@ export const markOcrReceiptAsFailed = async ({
     },
   });
 };
+
+export const deleteOcrReceiptById = async (receiptId: string) => {
+  return prisma.receipt.delete({
+    where: { id: receiptId },
+  });
+};

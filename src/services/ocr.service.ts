@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import { AppError } from '../errors/app-error.js';
 import {
   createOcrReceipt,
+  deleteOcrReceiptById,
   findOcrReceiptById,
   markOcrReceiptAsFailed,
   markOcrReceiptAsSuccess,
@@ -189,5 +190,38 @@ export const getOcrJob = async (
   return {
     receiptId,
     status: 'PENDING',
+  };
+};
+
+export const deleteOcrJob = async (
+  receiptId: string,
+  userId: string,
+): Promise<{ receiptId: string; deleted: true }> => {
+  const receipt = await findOcrReceiptById(receiptId);
+
+  if (receipt === null) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'OCR_009',
+      '존재하지 않는 OCR 작업입니다.',
+      '해당 receiptId를 찾을 수 없습니다.',
+    );
+  }
+
+  if (receipt.createdByUserId !== userId) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'OCR_008',
+      '접근 권한이 없습니다.',
+      '본인 소유의 OCR 결과만 삭제할 수 있습니다.',
+    );
+  }
+
+  await deleteOcrReceiptById(receiptId);
+  processingReceiptIds.delete(receiptId);
+
+  return {
+    receiptId,
+    deleted: true,
   };
 };
