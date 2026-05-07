@@ -5,11 +5,14 @@ import { StatusCodes } from 'http-status-codes';
 import { AppError } from '../errors/app-error.js';
 import {
   createOcrReceipt,
+  deleteOcrReceiptById,
   findOcrReceiptById,
   markOcrReceiptAsFailed,
   markOcrReceiptAsSuccess,
 } from '../repositories/ocr.repository.js';
 import { type OcrJobResult, type OcrParsedResult } from '../types/ocr.types.js';
+
+import { getReceiptOcrEngine } from './ocr/receipt-ocr-engine.factory.js';
 
 const processingReceiptIds = new Set<string>();
 
@@ -19,26 +22,7 @@ type CreateOcrJobParams = {
   imageBuffer: Buffer;
   originalFileName: string;
   currencyHint?: string;
-};
-
-const detectCurrency = (currencyHint?: string): string => {
-  if (currencyHint !== undefined && currencyHint.trim() !== '') {
-    return currencyHint.toUpperCase();
-  }
-
-  return 'KRW';
-};
-
-const parseMockOcrResult = (currencyHint?: string): OcrParsedResult => {
-  const currency = detectCurrency(currencyHint);
-  const purchasedAt = new Date().toISOString();
-
-  return {
-    merchantName: '미확인 가맹점',
-    totalAmount: 1000,
-    currency,
-    purchasedAt,
-  };
+  receiptLocale?: string;
 };
 
 const buildTemporaryImageUrl = (originalFileName: string): string => {
@@ -52,24 +36,33 @@ const buildTemporaryImageUrl = (originalFileName: string): string => {
 
 const runOcrPipeline = async (
   receiptId: string,
+  imageBuffer: Buffer,
+  originalFileName: string,
   currencyHint?: string,
+  receiptLocale?: string,
 ): Promise<void> => {
   try {
-    // TODO: Clova OCR 연동 후 실제 OCR 텍스트를 파싱하도록 교체합니다.
-    const parsedResult = parseMockOcrResult(currencyHint);
+    const engine = getReceiptOcrEngine();
+    const { parsed: parsedResult, rawText } = await engine.recognize({
+      imageBuffer,
+      originalFileName,
+      ...(currencyHint !== undefined && { currencyHint }),
+      ...(receiptLocale !== undefined && { receiptLocale }),
+    });
 
     if (parsedResult.totalAmount <= 0) {
       throw new AppError(
         StatusCodes.UNPROCESSABLE_ENTITY,
         'OCR_007',
         '파싱 실패(핵심 필드 미검출)',
-        '영수증 총액을 추출하지 못했습니다. 추후 OCR 엔진 연동 후 개선됩니다.',
+        '영수증 총액을 추출하지 못했습니다. 이미지 품질이나 양식을 확인해 주세요.',
       );
     }
 
     await markOcrReceiptAsSuccess({
       receiptId,
       parsedJson: parsedResult,
+      ocrText: rawText.trim() === '' ? null : rawText,
     });
   } catch (error) {
     const detail =
@@ -92,6 +85,7 @@ export const createOcrJob = async ({
   imageBuffer,
   originalFileName,
   currencyHint,
+  receiptLocale,
 }: CreateOcrJobParams): Promise<{ receiptId: string; status: 'PENDING' }> => {
   if (imageBuffer.length === 0) {
     throw new AppError(
@@ -111,7 +105,13 @@ export const createOcrJob = async ({
   });
 
   processingReceiptIds.add(receipt.id);
-  void runOcrPipeline(receipt.id, currencyHint);
+  void runOcrPipeline(
+    receipt.id,
+    imageBuffer,
+    originalFileName,
+    currencyHint,
+    receiptLocale,
+  );
 
   return {
     receiptId: receipt.id,
@@ -190,5 +190,38 @@ export const getOcrJob = async (
   return {
     receiptId,
     status: 'PENDING',
+  };
+};
+
+export const deleteOcrJob = async (
+  receiptId: string,
+  userId: string,
+): Promise<{ receiptId: string; deleted: true }> => {
+  const receipt = await findOcrReceiptById(receiptId);
+
+  if (receipt === null) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'OCR_009',
+      '존재하지 않는 OCR 작업입니다.',
+      '해당 receiptId를 찾을 수 없습니다.',
+    );
+  }
+
+  if (receipt.createdByUserId !== userId) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'OCR_008',
+      '접근 권한이 없습니다.',
+      '본인 소유의 OCR 결과만 삭제할 수 있습니다.',
+    );
+  }
+
+  await deleteOcrReceiptById(receiptId);
+  processingReceiptIds.delete(receiptId);
+
+  return {
+    receiptId,
+    deleted: true,
   };
 };

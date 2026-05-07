@@ -4,7 +4,7 @@ import { MulterError } from 'multer';
 
 import { AppError } from '../errors/app-error.js';
 import { uploadReceiptImage } from '../middlewares/upload.middleware.js';
-import { createOcrJob, getOcrJob } from '../services/ocr.service.js';
+import { createOcrJob, deleteOcrJob, getOcrJob } from '../services/ocr.service.js';
 import { sendSuccess } from '../utils/response.js';
 
 const getUserIdFromHeader = (req: Request): string => {
@@ -66,12 +66,14 @@ export const createReceiptOcrJob = async (
 
       const userId = getUserIdFromHeader(req);
       const currencyHint = req.body.currencyHint as string | undefined;
+      const receiptLocale = req.body.receiptLocale as string | undefined;
       const createJobParams = {
         tripId,
         userId,
         imageBuffer: receiptFile.buffer,
         originalFileName: receiptFile.originalname,
         ...(currencyHint !== undefined && { currencyHint }),
+        ...(receiptLocale !== undefined && { receiptLocale }),
       };
       const result = await createOcrJob(createJobParams);
 
@@ -114,6 +116,40 @@ export const getReceiptOcrJob = async (
       res,
       StatusCodes.OK,
       '요청이 성공적으로 처리되었습니다.',
+      result,
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteReceiptOcrJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const receiptIdParam = req.params.receiptId;
+    const receiptId = Array.isArray(receiptIdParam)
+      ? receiptIdParam[0]
+      : receiptIdParam;
+
+    if (receiptId === undefined || receiptId.trim() === '') {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'OCR_009',
+        '존재하지 않는 OCR 작업입니다.',
+        'receiptId가 필요합니다.',
+      );
+    }
+
+    const userId = getUserIdFromHeader(req);
+    const result = await deleteOcrJob(receiptId, userId);
+
+    sendSuccess(
+      res,
+      StatusCodes.OK,
+      'OCR 결과가 삭제되었습니다.',
       result,
     );
   } catch (error) {
