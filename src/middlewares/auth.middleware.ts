@@ -11,34 +11,24 @@ export const authenticate = async (
   next: NextFunction,
 ) => {
   try {
-    const authHeader = req.headers.authorization;
-
-    // 헤더 검증
-    if (authHeader?.startsWith('Bearer ') !== true) {
+    const { accessToken } = req.cookies;
+    if (accessToken === undefined) {
       throw new AppError(
         StatusCodes.UNAUTHORIZED,
         'MISSING_TOKEN',
         '인증에 실패했습니다.',
-        '요청 인증 토큰(Access Token)이 포함되어야 합니다.',
-      );
-    }
-
-    // 토큰 추출
-    const token = authHeader.split(' ')[1];
-
-    if (token === undefined || token === '') {
-      throw new AppError(
-        StatusCodes.UNAUTHORIZED,
-        'INVALID_TOKEN',
-        '인증에 실패했습니다.',
-        '유효하지 않은 토큰입니다. 토큰의 형식이 잘못되었습니다.',
+        '요청 인증 토큰(Access Token)이 존재하지 않습니다.',
       );
     }
 
     // 토큰 검증
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string, {
-      issuer: 'travel-tick',
-    }) as JwtPayload;
+    const decoded = jwt.verify(
+      accessToken,
+      process.env.JWT_ACCESS_SECRET as string,
+      {
+        issuer: 'travel-tick',
+      },
+    ) as JwtPayload;
 
     (req as AuthenticatedRequest).user = decoded;
 
