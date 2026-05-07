@@ -1,8 +1,16 @@
 import { Router } from 'express';
-import { StatusCodes } from 'http-status-codes';
+
+import { tripController } from '../controllers/trips.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', (_req, res) => res.status(StatusCodes.OK).send('Trips'));
+router.use(authenticate);
+
+router.get('/', tripController.getTrips);
+router.post('/', tripController.createTrip);
+router.get('/:tripId', tripController.getTripById);
+router.patch('/:tripId', tripController.updateTrip);
+router.delete('/:tripId', tripController.deleteTrip);
 
 export default router;
