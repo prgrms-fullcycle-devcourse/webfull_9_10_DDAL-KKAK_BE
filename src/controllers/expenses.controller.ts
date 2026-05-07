@@ -4,7 +4,11 @@ import { MulterError } from 'multer';
 
 import { AppError } from '../errors/app-error.js';
 import { uploadReceiptImage } from '../middlewares/upload.middleware.js';
-import { createOcrJob, deleteOcrJob, getOcrJob } from '../services/ocr.service.js';
+import {
+  createOcrJob,
+  deleteOcrJob,
+  getOcrJob,
+} from '../services/ocr.service.js';
 import { sendSuccess } from '../utils/response.js';
 
 const getUserIdFromHeader = (req: Request): string => {
@@ -146,12 +150,7 @@ export const deleteReceiptOcrJob = async (
     const userId = getUserIdFromHeader(req);
     const result = await deleteOcrJob(receiptId, userId);
 
-    sendSuccess(
-      res,
-      StatusCodes.OK,
-      'OCR 결과가 삭제되었습니다.',
-      result,
-    );
+    sendSuccess(res, StatusCodes.OK, 'OCR 결과가 삭제되었습니다.', result);
   } catch (error) {
     next(error);
   }
