@@ -26,12 +26,28 @@ export const tripRepository = {
     return prisma.trip.findMany({
       where: { ownerUserId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
   },
 
   findById(tripId: string) {
     return prisma.trip.findUnique({
       where: { id: tripId },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
   },
 
