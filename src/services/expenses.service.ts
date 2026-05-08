@@ -331,4 +331,92 @@ export const expensesService = {
 
     return expensesRepository.update(expenseId, input);
   },
+
+  async getExpenses(userId: string, tripId: string) {
+    if (tripId.trim() === '') {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'EXP_001',
+        '필수 입력값이 누락되었습니다.',
+        'tripId는 필수 값입니다.',
+      );
+    }
+
+    const trip = await expensesRepository.findTripById(tripId);
+    if (trip === null) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        'EXP_002',
+        '유효하지 않은 지출 요청입니다.',
+        'tripId에 해당하는 여행이 존재하지 않습니다.',
+      );
+    }
+
+    if (trip.ownerUserId !== userId) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'EXP_003',
+        '접근 권한이 없습니다.',
+        '본인 소유의 여행 지출만 조회할 수 있습니다.',
+      );
+    }
+
+    return expensesRepository.findManyByTripId(tripId);
+  },
+
+  async getExpenseById(userId: string, expenseId: string) {
+    const expenseForAuth = await expensesRepository.findExpenseById(expenseId);
+    if (expenseForAuth === null) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        'EXP_007',
+        '지출을 찾을 수 없습니다.',
+        'expenseId에 해당하는 지출이 존재하지 않습니다.',
+      );
+    }
+
+    if (expenseForAuth.trip.ownerUserId !== userId) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'EXP_003',
+        '접근 권한이 없습니다.',
+        '본인 소유의 여행 지출만 조회할 수 있습니다.',
+      );
+    }
+
+    const expense = await expensesRepository.findExpenseDetailById(expenseId);
+    if (expense === null) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        'EXP_007',
+        '지출을 찾을 수 없습니다.',
+        'expenseId에 해당하는 지출이 존재하지 않습니다.',
+      );
+    }
+
+    return expense;
+  },
+
+  async deleteExpense(userId: string, expenseId: string) {
+    const expense = await expensesRepository.findExpenseById(expenseId);
+    if (expense === null) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        'EXP_007',
+        '지출을 찾을 수 없습니다.',
+        'expenseId에 해당하는 지출이 존재하지 않습니다.',
+      );
+    }
+
+    if (expense.trip.ownerUserId !== userId) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'EXP_003',
+        '접근 권한이 없습니다.',
+        '본인 소유의 여행 지출만 삭제할 수 있습니다.',
+      );
+    }
+
+    await expensesRepository.deleteById(expenseId);
+  },
 };
