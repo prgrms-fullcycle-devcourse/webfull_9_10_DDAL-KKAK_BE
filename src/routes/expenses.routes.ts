@@ -1,21 +1,25 @@
 import { Router } from 'express';
-import { StatusCodes } from 'http-status-codes';
 
 import {
   createExpense,
   createReceiptOcrJob,
+  deleteExpense,
   deleteReceiptOcrJob,
+  getExpenseById,
+  getExpenses,
   getReceiptOcrJob,
   updateExpense,
 } from '../controllers/expenses.controller.js';
 
 const router = Router();
 
-router.get('/', (_req, res) => res.status(StatusCodes.OK).send('Expenses'));
-router.post('/', createExpense);
-router.patch('/:expenseId', updateExpense);
 router.post('/ocr', createReceiptOcrJob);
 router.get('/ocr/:receiptId', getReceiptOcrJob);
 router.delete('/ocr/:receiptId', deleteReceiptOcrJob);
+router.get('/', getExpenses);
+router.post('/', createExpense);
+router.get('/:expenseId', getExpenseById);
+router.patch('/:expenseId', updateExpense);
+router.delete('/:expenseId', deleteExpense);
 
 export default router;

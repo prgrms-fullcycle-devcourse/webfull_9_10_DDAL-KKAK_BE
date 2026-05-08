@@ -229,6 +229,82 @@ export const updateExpense = async (
   }
 };
 
+export const getExpenses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const userId = getUserIdFromHeader(req);
+    const tripId = String(req.query.tripId ?? '');
+    const expenses = await expensesService.getExpenses(userId, tripId);
+
+    sendSuccess(
+      res,
+      StatusCodes.OK,
+      '요청이 성공적으로 처리되었습니다.',
+      expenses,
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getExpenseById = async (
+  req: Request<{ expenseId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const userId = getUserIdFromHeader(req);
+    const { expenseId } = req.params;
+
+    if (expenseId === undefined || expenseId.trim() === '') {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'EXP_007',
+        '지출을 찾을 수 없습니다.',
+        'expenseId가 필요합니다.',
+      );
+    }
+
+    const expense = await expensesService.getExpenseById(userId, expenseId);
+    sendSuccess(
+      res,
+      StatusCodes.OK,
+      '요청이 성공적으로 처리되었습니다.',
+      expense,
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteExpense = async (
+  req: Request<{ expenseId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const userId = getUserIdFromHeader(req);
+    const { expenseId } = req.params;
+
+    if (expenseId === undefined || expenseId.trim() === '') {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'EXP_007',
+        '지출을 찾을 수 없습니다.',
+        'expenseId가 필요합니다.',
+      );
+    }
+
+    await expensesService.deleteExpense(userId, expenseId);
+    sendSuccess(res, StatusCodes.OK, '지출이 성공적으로 삭제되었습니다.', null);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getReceiptOcrJob = async (
   req: Request,
   res: Response,

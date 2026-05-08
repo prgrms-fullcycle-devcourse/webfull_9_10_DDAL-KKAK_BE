@@ -79,6 +79,19 @@ export const expensesRepository = {
     });
   },
 
+  findExpenseDetailById(expenseId: string) {
+    return prisma.expense.findUnique({
+      where: { id: expenseId },
+    });
+  },
+
+  findManyByTripId(tripId: string) {
+    return prisma.expense.findMany({
+      where: { tripId },
+      orderBy: { spentAt: 'desc' },
+    });
+  },
+
   findExpenseByReceiptIdExcludingExpense(receiptId: string, expenseId: string) {
     return prisma.expense.findFirst({
       where: {
@@ -117,6 +130,12 @@ export const expensesRepository = {
         ...(input.amountKrw !== undefined && { amountKrw: input.amountKrw }),
         ...(input.receiptId !== undefined && { receiptId: input.receiptId }),
       },
+    });
+  },
+
+  deleteById(expenseId: string) {
+    return prisma.expense.delete({
+      where: { id: expenseId },
     });
   },
 };
