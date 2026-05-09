@@ -10,6 +10,7 @@ type CreateOcrReceiptParams = {
 type UpdateOcrSuccessParams = {
   receiptId: string;
   parsedJson: Prisma.InputJsonValue;
+  ocrText?: string | null;
 };
 
 type UpdateOcrFailureParams = {
@@ -41,13 +42,14 @@ export const findOcrReceiptById = async (receiptId: string) => {
 export const markOcrReceiptAsSuccess = async ({
   receiptId,
   parsedJson,
+  ocrText,
 }: UpdateOcrSuccessParams) => {
   return prisma.receipt.update({
     where: { id: receiptId },
     data: {
       status: 'SUCCESS',
       parsedJson,
-      ocrText: null,
+      ocrText: ocrText ?? null,
       errorMessage: null,
     },
   });
@@ -63,5 +65,11 @@ export const markOcrReceiptAsFailed = async ({
       status: 'FAILED',
       errorMessage,
     },
+  });
+};
+
+export const deleteOcrReceiptById = async (receiptId: string) => {
+  return prisma.receipt.delete({
+    where: { id: receiptId },
   });
 };
