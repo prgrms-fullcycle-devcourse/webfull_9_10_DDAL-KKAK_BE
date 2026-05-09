@@ -47,7 +47,7 @@ export const getCurrencies = async (
       );
     }
 
-    const data = await exchangeRateService.getLatestRates(base, quoteCodes);
+    const data = await exchangeRateService.getExchangeRates(base, quoteCodes);
 
     sendSuccess(
       res,
