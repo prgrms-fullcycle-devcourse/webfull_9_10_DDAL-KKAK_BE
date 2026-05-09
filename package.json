@@ -45,8 +45,10 @@
   },
   "homepage": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_DDAL-KKAK_BE#readme",
   "dependencies": {
+    "@paralleldrive/cuid2": "^3.3.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "axios": "^1.16.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
