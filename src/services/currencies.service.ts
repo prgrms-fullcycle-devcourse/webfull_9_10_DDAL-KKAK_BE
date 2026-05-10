@@ -105,3 +105,26 @@ export const getExchangeRates = async (base: string, quoteCodes: string[]) => {
     })),
   };
 };
+
+export const updateAllRates = async () => {
+  const baseCode = 'KRW';
+
+  console.log(`${new Date().toISOString()} 정기 환율 업데이트 시작...`);
+
+  try {
+    const externalData = await exchangeApiService.fetchLatestRates(baseCode);
+
+    await exchangeRateRepository.createManyRates(
+      baseCode,
+      externalData.rates,
+      PROVIDER_NAME,
+    );
+
+    console.log(`${new Date().toISOString()} 정기 환율 업데이트 완료!!!`);
+  } catch (err) {
+    console.error(
+      `[${new Date().toISOString()}] ❌ 정기 환율 업데이트 실패:`,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+};
