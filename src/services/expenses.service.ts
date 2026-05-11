@@ -62,11 +62,7 @@ const validateCreateExpenseInput = (input: CreateExpenseInput): void => {
     );
   }
 
-  if (
-    input.category !== undefined &&
-    input.category !== '' &&
-    !isAllowedCategory(input.category)
-  ) {
+  if (input.category !== undefined && !isAllowedCategory(input.category)) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       'EXP_001',
@@ -129,11 +125,7 @@ const validateUpdateExpenseInput = (input: UpdateExpenseInput): void => {
     );
   }
 
-  if (
-    input.category !== undefined &&
-    input.category !== '' &&
-    !isAllowedCategory(input.category)
-  ) {
+  if (input.category !== undefined && !isAllowedCategory(input.category)) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       'EXP_001',

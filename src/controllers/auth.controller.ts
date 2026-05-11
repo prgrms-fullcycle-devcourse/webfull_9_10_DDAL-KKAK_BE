@@ -7,7 +7,6 @@ import * as authService from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
 import {
   clearRefreshTokenCookie,
-  setAccessTokenCookie,
   setRefreshTokenCookie,
 } from '../utils/auth.utils.js';
 import { sendSuccess } from '../utils/response.js';
@@ -72,13 +71,12 @@ export const finishLogin = async (req: Request, res: Response) => {
       code as string,
     );
 
-    // accessToken을 쿠키에 저장
-    setAccessTokenCookie(res, accessToken);
-
     // refreshToken을 쿠키에 저장
     setRefreshTokenCookie(res, refreshToken);
 
-    return res.redirect(`${process.env.ALLOWED_ORIGINS}/`);
+    return res.redirect(
+      `${process.env.ALLOWED_ORIGINS}/auth/callback?accessToken=${accessToken}`,
+    );
   } catch (err) {
     if (err instanceof AppError) {
       return res.redirect(
