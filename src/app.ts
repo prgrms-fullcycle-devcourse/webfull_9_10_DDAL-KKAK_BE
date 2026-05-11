@@ -11,6 +11,7 @@ import authRouter from './routes/auth.routes.js';
 import currenciesRouter from './routes/currencies.routes.js';
 import expensesRouter from './routes/expenses.routes.js';
 import tripsRouter from './routes/trips.routes.js';
+import userRouter from './routes/users.routes.js';
 
 const app = express();
 
@@ -30,8 +31,8 @@ app.use(
   cors({
     origin: [...allowedOrigins, /^http:\/\/localhost(:\d+)?$/], // 추후 배포 시 localhost 제거
     credentials: true,
-    methods: 'GET,POST,PATCH,DELETE',
-    allowedHeaders: 'Content-Type,Authorization',
+    methods: 'GET,POST,PATCH,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization,x-user-id',
   }),
 );
 
@@ -46,6 +47,7 @@ app.use('/auth', authRouter);
 app.use('/currencies', currenciesRouter);
 app.use('/expenses', expensesRouter);
 app.use('/trips', tripsRouter);
+app.use('/users', userRouter);
 
 // 전역 에러 핸들러
 app.use(errorHandler);
