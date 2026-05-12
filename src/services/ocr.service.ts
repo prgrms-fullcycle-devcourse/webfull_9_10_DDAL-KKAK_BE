@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { StatusCodes } from 'http-status-codes';
 
 import { AppError } from '../errors/app-error.js';
+import { findByUserId } from '../repositories/auth.repository.js';
 import {
   createOcrReceipt,
   deleteOcrReceiptById,
@@ -10,6 +11,7 @@ import {
   markOcrReceiptAsFailed,
   markOcrReceiptAsSuccess,
 } from '../repositories/ocr.repository.js';
+import { tripRepository } from '../repositories/trips.repository.js';
 import { type OcrJobResult, type OcrParsedResult } from '../types/ocr.types.js';
 
 import { getReceiptOcrEngine } from './ocr/receipt-ocr-engine.factory.js';
@@ -23,6 +25,40 @@ type CreateOcrJobParams = {
   originalFileName: string;
   currencyHint?: string;
   receiptLocale?: string;
+};
+
+const assertUserAndTripForOcr = async (
+  userId: string,
+  tripId: string,
+): Promise<void> => {
+  const user = await findByUserId(userId);
+  if (user === null) {
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      'AUTH_002',
+      '인증 정보가 유효하지 않습니다.',
+      '등록되지 않은 사용자입니다. 로그인 후 발급된 사용자 ID로 요청해 주세요.',
+    );
+  }
+
+  const trip = await tripRepository.findById(tripId);
+  if (trip === null) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'TRIP_009',
+      '여행을 찾을 수 없습니다.',
+      'tripId에 해당하는 여행이 존재하지 않습니다.',
+    );
+  }
+
+  if (trip.ownerUserId !== userId) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'TRIP_010',
+      '접근 권한이 없습니다.',
+      '본인 소유의 여행에만 영수증 OCR을 요청할 수 있습니다.',
+    );
+  }
 };
 
 const buildTemporaryImageUrl = (originalFileName: string): string => {
@@ -95,6 +131,8 @@ export const createOcrJob = async ({
       '업로드된 파일이 비어 있습니다.',
     );
   }
+
+  await assertUserAndTripForOcr(userId, tripId);
 
   const temporaryImageUrl = buildTemporaryImageUrl(originalFileName);
 
