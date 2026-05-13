@@ -10,13 +10,12 @@ import {
   deleteOcrJob,
   getOcrJob,
 } from '../services/ocr.service.js';
-import type { AuthenticatedRequest } from '../types/auth.types.js';
 import type { CreateExpenseInput } from '../types/expenses.types.js';
 import { sendSuccess } from '../utils/response.js';
 
-/** `authenticate` 미들웨어 이후 — JWT `sub`를 사용자 ID로 사용 */
+/** `authenticate` 미들웨어 이후 — `Request.user`(JwtPayload)의 `sub` 사용 */
 const getAuthenticatedUserId = (req: Request): string => {
-  const { sub } = (req as AuthenticatedRequest).user;
+  const { sub } = req.user;
   if (sub === undefined || sub.trim() === '') {
     throw new AppError(
       StatusCodes.UNAUTHORIZED,
