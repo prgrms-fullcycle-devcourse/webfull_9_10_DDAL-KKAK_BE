@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import * as settlementController from '../controllers/settlement.controller.js';
 import { tripController } from '../controllers/trips.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 
@@ -16,5 +17,11 @@ router.patch('/:tripId', tripController.updateTrip);
 router.delete('/:tripId', tripController.deleteTrip);
 
 router.use('/:tripId/participants', participantsRouter);
+
+router.get('/:tripId/settlement', settlementController.getTripSettlement);
+router.get(
+  '/:tripId/settlement/summary',
+  settlementController.getMySettlementSummary,
+);
 
 export default router;

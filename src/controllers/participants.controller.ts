@@ -2,7 +2,6 @@ import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
 import { participantsService } from '../services/participants.service.js';
-import type { AuthenticatedRequest } from '../types/auth.types.js';
 import { sendSuccess } from '../utils/response.js';
 
 export const participantsController = {
@@ -12,7 +11,7 @@ export const participantsController = {
     next: NextFunction,
   ) {
     try {
-      const { sub: userId } = (req as unknown as AuthenticatedRequest).user;
+      const { sub: userId } = req.user;
       const { tripId } = req.params;
       const participant = await participantsService.createParticipant(
         tripId,
@@ -36,7 +35,7 @@ export const participantsController = {
     next: NextFunction,
   ) {
     try {
-      const { sub: userId } = (req as unknown as AuthenticatedRequest).user;
+      const { sub: userId } = req.user;
       const { tripId, participantId } = req.params;
       const participant = await participantsService.updateParticipant(
         tripId,
@@ -61,7 +60,7 @@ export const participantsController = {
     next: NextFunction,
   ) {
     try {
-      const { sub: userId } = (req as unknown as AuthenticatedRequest).user;
+      const { sub: userId } = req.user;
       const { tripId, participantId } = req.params;
       await participantsService.deleteParticipant(
         tripId,

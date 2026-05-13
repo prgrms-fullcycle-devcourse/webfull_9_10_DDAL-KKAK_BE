@@ -32,7 +32,7 @@ app.use(
     origin: [...allowedOrigins, /^http:\/\/localhost(:\d+)?$/], // 추후 배포 시 localhost 제거
     credentials: true,
     methods: 'GET,POST,PATCH,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type,Authorization,x-user-id',
+    allowedHeaders: 'Content-Type,Authorization',
   }),
 );
 
