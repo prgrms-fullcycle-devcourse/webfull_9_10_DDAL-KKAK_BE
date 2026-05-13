@@ -17,10 +17,10 @@ const router = Router();
 router.post('/ocr', authenticate, createReceiptOcrJob);
 router.get('/ocr/:receiptId', authenticate, getReceiptOcrJob);
 router.delete('/ocr/:receiptId', authenticate, deleteReceiptOcrJob);
-router.get('/', getExpenses);
-router.post('/', createExpense);
-router.get('/:expenseId', getExpenseById);
-router.patch('/:expenseId', updateExpense);
-router.delete('/:expenseId', deleteExpense);
+router.get('/', authenticate, getExpenses);
+router.post('/', authenticate, createExpense);
+router.get('/:expenseId', authenticate, getExpenseById);
+router.patch('/:expenseId', authenticate, updateExpense);
+router.delete('/:expenseId', authenticate, deleteExpense);
 
 export default router;
