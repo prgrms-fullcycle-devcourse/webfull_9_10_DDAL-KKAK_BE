@@ -4,6 +4,8 @@ import * as settlementController from '../controllers/settlement.controller.js';
 import { tripController } from '../controllers/trips.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 
+import participantsRouter from './participants.routes.js';
+
 const router = Router();
 
 router.use(authenticate);
@@ -15,5 +17,6 @@ router.patch('/:tripId', tripController.updateTrip);
 router.delete('/:tripId', tripController.deleteTrip);
 
 router.get('/:tripId/settlement', settlementController.getTripSettlement);
+router.use('/:tripId/participants', participantsRouter);
 
 export default router;
