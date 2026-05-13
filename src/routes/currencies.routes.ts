@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { StatusCodes } from 'http-status-codes';
+
+import { getCurrencies } from '../controllers/currencies.controller.js';
 
 const router = Router();
 
-router.get('/', (_req, res) => res.status(StatusCodes.OK).send('Currencies'));
+router.get('/', getCurrencies);
 
 export default router;

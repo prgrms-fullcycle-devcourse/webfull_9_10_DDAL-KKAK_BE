@@ -11,6 +11,7 @@ import authRouter from './routes/auth.routes.js';
 import currenciesRouter from './routes/currencies.routes.js';
 import expensesRouter from './routes/expenses.routes.js';
 import tripsRouter from './routes/trips.routes.js';
+import userRouter from './routes/users.routes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/auth', authRouter);
 app.use('/currencies', currenciesRouter);
 app.use('/expenses', expensesRouter);
 app.use('/trips', tripsRouter);
+app.use('/users', userRouter);
 
 // 전역 에러 핸들러
 app.use(errorHandler);

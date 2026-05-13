@@ -11,8 +11,6 @@ export const expensesRepository = {
         tripId: input.tripId,
         payerParticipantId: input.payerParticipantId,
         title: input.title,
-        category: input.category,
-        note: input.note,
         spentAt: new Date(input.spentAt),
         currency: input.currency,
         amountOriginal: input.amountOriginal,
@@ -20,6 +18,8 @@ export const expensesRepository = {
         fxRateTripToKrw: input.fxRateTripToKrw,
         amountKrw: input.amountKrw,
         ...(input.receiptId !== undefined && { receiptId: input.receiptId }),
+        ...(input.category !== undefined && { category: input.category }),
+        ...(input.note !== undefined && { note: input.note }),
       },
     });
   },

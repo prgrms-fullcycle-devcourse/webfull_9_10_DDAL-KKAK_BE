@@ -55,8 +55,6 @@ export default [
 
       // 1. 들여쓰기
       'prettier/prettier': 'error',
-      indent: ['error', 2],
-      'no-mixed-spaces-and-tabs': 'error',
 
       // 2. 문자의 종료 세미콜론
       semi: ['error', 'always'],
