@@ -10,6 +10,7 @@ import {
   deleteOcrJob,
   getOcrJob,
 } from '../services/ocr.service.js';
+import type { AuthenticatedRequest } from '../types/auth.types.js';
 import type { CreateExpenseInput } from '../types/expenses.types.js';
 import { sendSuccess } from '../utils/response.js';
 
@@ -26,6 +27,21 @@ const getUserIdFromHeader = (req: Request): string => {
   }
 
   return userId;
+};
+
+/** OCR 라우트는 `authenticate` 이후 호출 — JWT `sub`를 사용자 ID로 사용 */
+const getUserIdFromOcrAuth = (req: Request): string => {
+  const { sub } = (req as AuthenticatedRequest).user;
+  if (sub === undefined || sub.trim() === '') {
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      'AUTH_001',
+      '인증 정보가 필요합니다.',
+      '액세스 토큰이 유효하지 않습니다.',
+    );
+  }
+
+  return sub;
 };
 
 export const createReceiptOcrJob = async (
@@ -70,7 +86,7 @@ export const createReceiptOcrJob = async (
         );
       }
 
-      const userId = getUserIdFromHeader(req);
+      const userId = getUserIdFromOcrAuth(req);
       const currencyHint = req.body.currencyHint as string | undefined;
       const receiptLocale = req.body.receiptLocale as string | undefined;
       const createJobParams = {
@@ -325,7 +341,7 @@ export const getReceiptOcrJob = async (
       );
     }
 
-    const userId = getUserIdFromHeader(req);
+    const userId = getUserIdFromOcrAuth(req);
     const result = await getOcrJob(receiptId, userId);
 
     sendSuccess(
@@ -359,7 +375,7 @@ export const deleteReceiptOcrJob = async (
       );
     }
 
-    const userId = getUserIdFromHeader(req);
+    const userId = getUserIdFromOcrAuth(req);
     const result = await deleteOcrJob(receiptId, userId);
 
     sendSuccess(res, StatusCodes.OK, 'OCR 결과가 삭제되었습니다.', result);
