@@ -16,7 +16,12 @@ router.get('/:tripId', tripController.getTripById);
 router.patch('/:tripId', tripController.updateTrip);
 router.delete('/:tripId', tripController.deleteTrip);
 
-router.get('/:tripId/settlement', settlementController.getTripSettlement);
 router.use('/:tripId/participants', participantsRouter);
+
+router.get('/:tripId/settlement', settlementController.getTripSettlement);
+router.get(
+  '/:tripId/settlement/summary',
+  settlementController.getMySettlementSummary,
+);
 
 export default router;
