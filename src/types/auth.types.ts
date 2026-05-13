@@ -1,5 +1,3 @@
-import type { Request } from 'express';
-
 export interface AuthParams {
   urls: {
     base: string;
@@ -55,7 +53,3 @@ export interface JwtPayload {
   iat: number;
   exp: number;
 }
-
-export type AuthenticatedRequest = Request & {
-  user: JwtPayload;
-};

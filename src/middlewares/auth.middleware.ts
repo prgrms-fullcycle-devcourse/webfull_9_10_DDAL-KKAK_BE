@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 
 import { AppError } from '../errors/app-error.js';
-import type { AuthenticatedRequest, JwtPayload } from '../types/auth.types.js';
+import type { JwtPayload } from '../types/auth.types.js';
 
 export const authenticate = async (
   req: Request,
@@ -37,7 +37,7 @@ export const authenticate = async (
       issuer: 'travel-tick',
     }) as JwtPayload;
 
-    (req as AuthenticatedRequest).user = decoded;
+    req.user = decoded;
 
     next();
   } catch (err: unknown) {
