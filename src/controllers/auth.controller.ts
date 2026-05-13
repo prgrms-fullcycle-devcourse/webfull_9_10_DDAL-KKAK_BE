@@ -4,7 +4,6 @@ import { StatusCodes } from 'http-status-codes';
 import config from '../config/index.js';
 import { AppError } from '../errors/app-error.js';
 import * as authService from '../services/auth.service.js';
-import type { AuthenticatedRequest } from '../types/auth.types.js';
 import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
@@ -100,7 +99,7 @@ export const logoutUser = async (
   try {
     const {
       user: { sub: userId },
-    } = req as AuthenticatedRequest;
+    } = req;
 
     // 사용자 로그아웃 처리
     await authService.logoutUser(userId);
@@ -174,7 +173,7 @@ export const withdrawUser = async (
   try {
     const {
       user: { sub: userId },
-    } = req as AuthenticatedRequest;
+    } = req;
 
     await authService.withdrawUser(userId);
 
