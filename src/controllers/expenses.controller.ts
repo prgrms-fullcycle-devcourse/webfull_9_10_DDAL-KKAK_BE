@@ -14,23 +14,8 @@ import type { AuthenticatedRequest } from '../types/auth.types.js';
 import type { CreateExpenseInput } from '../types/expenses.types.js';
 import { sendSuccess } from '../utils/response.js';
 
-/** OCR 라우트는 `authenticate` 이후 호출 — JWT `sub`를 사용자 ID로 사용 */
-const getUserIdFromOcrAuth = (req: Request): string => {
-  const { sub } = req.user;
-  if (sub === undefined || sub.trim() === '') {
-    throw new AppError(
-      StatusCodes.UNAUTHORIZED,
-      'AUTH_001',
-      '인증 정보가 필요합니다.',
-      '액세스 토큰이 유효하지 않습니다.',
-    );
-  }
-
-  return sub;
-};
-
-/** OCR 라우트는 `authenticate` 이후 호출 — JWT `sub`를 사용자 ID로 사용 */
-const getUserIdFromOcrAuth = (req: Request): string => {
+/** `authenticate` 미들웨어 이후 — JWT `sub`를 사용자 ID로 사용 */
+const getAuthenticatedUserId = (req: Request): string => {
   const { sub } = (req as AuthenticatedRequest).user;
   if (sub === undefined || sub.trim() === '') {
     throw new AppError(
@@ -86,7 +71,7 @@ export const createReceiptOcrJob = async (
         );
       }
 
-      const userId = getUserIdFromOcrAuth(req);
+      const userId = getAuthenticatedUserId(req);
       const currencyHint = req.body.currencyHint as string | undefined;
       const receiptLocale = req.body.receiptLocale as string | undefined;
       const createJobParams = {
@@ -117,7 +102,7 @@ export const createExpense = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = req.user.sub;
+    const userId = getAuthenticatedUserId(req);
     const payload = req.body as {
       tripId?: string;
       payerParticipantId?: string;
@@ -175,7 +160,7 @@ export const updateExpense = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = req.user.sub;
+    const userId = getAuthenticatedUserId(req);
     const { expenseId } = req.params;
 
     if (expenseId === undefined || expenseId.trim() === '') {
@@ -251,7 +236,7 @@ export const getExpenses = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = req.user.sub;
+    const userId = getAuthenticatedUserId(req);
     const tripId = String(req.query.tripId ?? '');
     const expenses = await expensesService.getExpenses(userId, tripId);
 
@@ -272,7 +257,7 @@ export const getExpenseById = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = req.user.sub;
+    const userId = getAuthenticatedUserId(req);
     const { expenseId } = req.params;
 
     if (expenseId === undefined || expenseId.trim() === '') {
@@ -302,7 +287,7 @@ export const deleteExpense = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = req.user.sub;
+    const userId = getAuthenticatedUserId(req);
     const { expenseId } = req.params;
 
     if (expenseId === undefined || expenseId.trim() === '') {
@@ -341,7 +326,7 @@ export const getReceiptOcrJob = async (
       );
     }
 
-    const userId = getUserIdFromOcrAuth(req);
+    const userId = getAuthenticatedUserId(req);
     const result = await getOcrJob(receiptId, userId);
 
     sendSuccess(
@@ -375,7 +360,7 @@ export const deleteReceiptOcrJob = async (
       );
     }
 
-    const userId = getUserIdFromOcrAuth(req);
+    const userId = getAuthenticatedUserId(req);
     const result = await deleteOcrJob(receiptId, userId);
 
     sendSuccess(res, StatusCodes.OK, 'OCR 결과가 삭제되었습니다.', result);
