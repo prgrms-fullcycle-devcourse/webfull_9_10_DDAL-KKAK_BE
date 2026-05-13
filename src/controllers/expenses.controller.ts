@@ -13,21 +13,6 @@ import {
 import type { CreateExpenseInput } from '../types/expenses.types.js';
 import { sendSuccess } from '../utils/response.js';
 
-const getUserIdFromHeader = (req: Request): string => {
-  const userId = req.header('x-user-id');
-
-  if (userId === undefined || userId.trim() === '') {
-    throw new AppError(
-      StatusCodes.UNAUTHORIZED,
-      'AUTH_001',
-      '인증 정보가 필요합니다.',
-      'x-user-id 헤더가 필요합니다. 추후 인증 미들웨어로 대체됩니다.',
-    );
-  }
-
-  return userId;
-};
-
 export const createReceiptOcrJob = async (
   req: Request,
   res: Response,
@@ -70,7 +55,7 @@ export const createReceiptOcrJob = async (
         );
       }
 
-      const userId = getUserIdFromHeader(req);
+      const userId = req.user.sub;
       const currencyHint = req.body.currencyHint as string | undefined;
       const receiptLocale = req.body.receiptLocale as string | undefined;
       const createJobParams = {
@@ -101,7 +86,7 @@ export const createExpense = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const payload = req.body as {
       tripId?: string;
       payerParticipantId?: string;
@@ -159,7 +144,7 @@ export const updateExpense = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const { expenseId } = req.params;
 
     if (expenseId === undefined || expenseId.trim() === '') {
@@ -235,7 +220,7 @@ export const getExpenses = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const tripId = String(req.query.tripId ?? '');
     const expenses = await expensesService.getExpenses(userId, tripId);
 
@@ -256,7 +241,7 @@ export const getExpenseById = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const { expenseId } = req.params;
 
     if (expenseId === undefined || expenseId.trim() === '') {
@@ -286,7 +271,7 @@ export const deleteExpense = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const { expenseId } = req.params;
 
     if (expenseId === undefined || expenseId.trim() === '') {
@@ -325,7 +310,7 @@ export const getReceiptOcrJob = async (
       );
     }
 
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const result = await getOcrJob(receiptId, userId);
 
     sendSuccess(
@@ -359,7 +344,7 @@ export const deleteReceiptOcrJob = async (
       );
     }
 
-    const userId = getUserIdFromHeader(req);
+    const userId = req.user.sub;
     const result = await deleteOcrJob(receiptId, userId);
 
     sendSuccess(res, StatusCodes.OK, 'OCR 결과가 삭제되었습니다.', result);

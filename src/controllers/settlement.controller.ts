@@ -3,7 +3,6 @@ import { StatusCodes } from 'http-status-codes';
 
 import { AppError } from '../errors/app-error.js';
 import * as settlementService from '../services/settlement.service.js';
-import type { AuthenticatedRequest } from '../types/auth.types.js';
 import { sendSuccess } from '../utils/response.js';
 
 export const getTripSettlement = async (
@@ -50,7 +49,7 @@ export const getMySettlementSummary = async (
 ) => {
   try {
     const { tripId } = req.params;
-    const { sub: userId } = (req as AuthenticatedRequest).user;
+    const { sub: userId } = req.user;
 
     if (tripId === undefined || typeof tripId !== 'string') {
       throw new AppError(
