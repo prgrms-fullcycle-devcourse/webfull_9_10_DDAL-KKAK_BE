@@ -10,12 +10,13 @@ import {
   getReceiptOcrJob,
   updateExpense,
 } from '../controllers/expenses.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.post('/ocr', createReceiptOcrJob);
-router.get('/ocr/:receiptId', getReceiptOcrJob);
-router.delete('/ocr/:receiptId', deleteReceiptOcrJob);
+router.post('/ocr', authenticate, createReceiptOcrJob);
+router.get('/ocr/:receiptId', authenticate, getReceiptOcrJob);
+router.delete('/ocr/:receiptId', authenticate, deleteReceiptOcrJob);
 router.get('/', getExpenses);
 router.post('/', createExpense);
 router.get('/:expenseId', getExpenseById);
