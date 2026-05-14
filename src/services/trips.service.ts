@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { AppError } from '../errors/app-error.js';
 import { tripRepository } from '../repositories/trips.repository.js';
+import { findByUserId } from '../repositories/users.repository.js';
 import type { CreateTripInput, UpdateTripInput } from '../types/trips.types.js';
 
 function validateCreateInput(input: CreateTripInput) {
@@ -87,7 +88,10 @@ export const tripService = {
   ) {
     validateCreateInput({ ...input, ownerUserId });
 
-    return tripRepository.create({ ...input, ownerUserId });
+    const user = await findByUserId(ownerUserId);
+    const ownerName = user?.name ?? '나';
+
+    return tripRepository.create({ ...input, ownerUserId, ownerName });
   },
 
   async getTrips(ownerUserId: string) {

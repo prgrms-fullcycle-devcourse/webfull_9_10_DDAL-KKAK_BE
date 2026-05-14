@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import type { CreateTripInput, UpdateTripInput } from '../types/trips.types.js';
 
 export const tripRepository = {
-  create(input: CreateTripInput) {
+  create(input: CreateTripInput & { ownerName: string }) {
     return prisma.trip.create({
       data: {
         ownerUserId: input.ownerUserId,
@@ -19,6 +19,9 @@ export const tripRepository = {
           input.endDate !== null && input.endDate !== undefined
             ? new Date(input.endDate)
             : null,
+        participants: {
+          create: [{ name: input.ownerName }],
+        },
       },
       include: {
         participants: {
