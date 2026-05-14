@@ -40,6 +40,14 @@ function validateCreateInput(input: CreateTripInput) {
     );
   }
 
+  if (input.budgetKrw !== undefined && input.budgetKrw <= 0) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'TRIP_011',
+      '목표 예산은 0보다 커야 합니다.',
+    );
+  }
+
   if (
     input.startDate !== undefined &&
     isNaN(new Date(input.startDate).getTime())
@@ -147,6 +155,18 @@ export const tripService = {
         StatusCodes.BAD_REQUEST,
         'TRIP_005',
         '환율은 0보다 커야 합니다.',
+      );
+    }
+
+    if (
+      input.budgetKrw !== undefined &&
+      input.budgetKrw !== null &&
+      input.budgetKrw <= 0
+    ) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'TRIP_011',
+        '목표 예산은 0보다 커야 합니다.',
       );
     }
 
