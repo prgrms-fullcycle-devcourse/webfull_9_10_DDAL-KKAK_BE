@@ -1,3 +1,4 @@
+import { Decimal } from '@prisma/client/runtime/client';
 import { StatusCodes } from 'http-status-codes';
 
 import { EXPENSE_CATEGORY } from '../constants/category.js';
@@ -40,16 +41,18 @@ export const getAiConsumptionReport = async (
   }
 
   // 통계 계산
-  const totalAmountKrw = trip.expenses.reduce(
-    (sum, exp) => sum + Number(exp.amountKrw),
-    0,
+  const totalDecimal = trip.expenses.reduce(
+    (sum, exp) => sum.add(exp.amountKrw),
+    new Decimal(0),
   );
+  const totalAmountKrw = Number(totalDecimal.toFixed(2));
+
   const expenseCount = trip.expenses.length;
   const days =
     trip.startDate && trip.endDate
       ? getDurationInDays(trip.startDate, trip.endDate)
       : 1;
-  const dailyAverageKrw = totalAmountKrw / days;
+  const dailyAverageKrw = Number((totalAmountKrw / days).toFixed(2));
 
   // 리포트 데이터 구성
   const aiAnalysis = await generateAiReport({
@@ -68,6 +71,11 @@ export const getAiConsumptionReport = async (
       ? EXPENSE_CATEGORY[rawCategory]
       : '기타';
 
+  const formattedInsights = aiAnalysis.categoryInsights.map(item => ({
+    ...item,
+    category: EXPENSE_CATEGORY[item.category] ?? item.category,
+  }));
+
   return {
     tripId: trip.id,
     generatedAt: new Date().toISOString(),
@@ -77,6 +85,9 @@ export const getAiConsumptionReport = async (
       dailyAverageKrw,
       expenseCount,
     },
-    report: aiAnalysis,
+    report: {
+      ...aiAnalysis,
+      categoryInsights: formattedInsights,
+    },
   };
 };

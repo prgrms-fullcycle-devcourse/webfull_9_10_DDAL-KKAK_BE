@@ -29,8 +29,12 @@ export const generateAiReport = async (
       "consumptionStyle": "소비 스타일 키워드",
       "totalAnalysis": "전체 요약 분석 (3문장 내외)",
       "categoryInsights": [
-        { "category": "가장 많이 쓴 카테고리", "insight": "해당 카테고리 소비 특징" }
-      ],
+        { 
+          "category": "소비 카테고리",
+          "amount": 12345, // 이 카테고리의 지출 합계를 소수점 2자리 숫자로 적어주세요.
+          "insight": "해당 카테고리 소비 특징"
+        }
+      ], // 카테고리별로 분석 데이터를 작성해주세요.
       "suggestions": ["조언1", "조언2"]
     }
   `;
