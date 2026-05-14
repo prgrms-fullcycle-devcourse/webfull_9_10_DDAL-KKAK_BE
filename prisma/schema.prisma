@@ -89,6 +89,7 @@ model Trip {
   tripCurrencyCode  String
   defaultFxMode     FxMode    @default(FIXED)
   fixedExchangeRate Decimal?  @db.Decimal(18, 6)
+  budgetKrw         Decimal?  @db.Decimal(18, 2)
   startDate         DateTime?
   endDate           DateTime?
 
@@ -109,7 +110,7 @@ model Participant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  trip          Trip           @relation(fields: [tripId], references: [id])
+  trip          Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
   expenses      Expense[]
   expenseShares ExpenseShare[]
 

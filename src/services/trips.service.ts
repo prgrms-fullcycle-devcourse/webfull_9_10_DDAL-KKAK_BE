@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { AppError } from '../errors/app-error.js';
 import { tripRepository } from '../repositories/trips.repository.js';
+import { findByUserId } from '../repositories/users.repository.js';
 import type { CreateTripInput, UpdateTripInput } from '../types/trips.types.js';
 
 function validateCreateInput(input: CreateTripInput) {
@@ -37,6 +38,14 @@ function validateCreateInput(input: CreateTripInput) {
       StatusCodes.BAD_REQUEST,
       'TRIP_005',
       '환율은 0보다 커야 합니다.',
+    );
+  }
+
+  if (input.budgetKrw !== undefined && input.budgetKrw <= 0) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'TRIP_011',
+      '목표 예산은 0보다 커야 합니다.',
     );
   }
 
@@ -79,7 +88,10 @@ export const tripService = {
   ) {
     validateCreateInput({ ...input, ownerUserId });
 
-    return tripRepository.create({ ...input, ownerUserId });
+    const user = await findByUserId(ownerUserId);
+    const ownerName = user?.name ?? '나';
+
+    return tripRepository.create({ ...input, ownerUserId, ownerName });
   },
 
   async getTrips(ownerUserId: string) {
@@ -147,6 +159,18 @@ export const tripService = {
         StatusCodes.BAD_REQUEST,
         'TRIP_005',
         '환율은 0보다 커야 합니다.',
+      );
+    }
+
+    if (
+      input.budgetKrw !== undefined &&
+      input.budgetKrw !== null &&
+      input.budgetKrw <= 0
+    ) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'TRIP_011',
+        '목표 예산은 0보다 커야 합니다.',
       );
     }
 
