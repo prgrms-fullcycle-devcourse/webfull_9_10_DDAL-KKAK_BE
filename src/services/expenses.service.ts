@@ -1,7 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 
 import { AppError } from '../errors/app-error.js';
-import { expensesRepository } from '../repositories/expenses.repository.js';
+import {
+  expensesRepository,
+  type ExpenseWithSummary,
+} from '../repositories/expenses.repository.js';
 import type {
   CreateExpenseInput,
   UpdateExpenseInput,
@@ -15,6 +18,71 @@ const isAllowedCurrency = (value: string): boolean =>
 
 const isAllowedFxMode = (value: string): boolean =>
   ['FIXED', 'REALTIME'].includes(value);
+
+const dedupePreserveOrder = (ids: string[]): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of ids) {
+    const t = id.trim();
+    if (t === '' || seen.has(t)) {
+      continue;
+    }
+    seen.add(t);
+    out.push(t);
+  }
+
+  return out;
+};
+
+const distinctShareParticipantIds = (
+  shares: ExpenseWithSummary['expenseShares'],
+): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of shares) {
+    if (!seen.has(s.participantId)) {
+      seen.add(s.participantId);
+      out.push(s.participantId);
+    }
+  }
+
+  return out;
+};
+
+const validateParticipantsBelongToTrip = async (
+  tripId: string,
+  participantIds: string[],
+): Promise<void> => {
+  const unique = dedupePreserveOrder(participantIds);
+  if (unique.length === 0) {
+    return;
+  }
+  const count = await expensesRepository.countParticipantsInTrip(
+    tripId,
+    unique,
+  );
+  if (count !== unique.length) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'EXP_005',
+      '유효하지 않은 지출 요청입니다.',
+      'splitWithParticipantIds에 해당 여행에 속하지 않는 참가자가 포함되어 있습니다.',
+    );
+  }
+};
+
+const mapExpenseToResponse = (row: ExpenseWithSummary) => {
+  const { payer, expenseShares, ...rest } = row;
+
+  return {
+    ...rest,
+    payerName: payer.name,
+    splitWith: expenseShares.map(es => ({
+      participantId: es.participant.id,
+      name: es.participant.name,
+    })),
+  };
+};
 
 const validateCreateExpenseInput = (input: CreateExpenseInput): void => {
   if (input.tripId.trim() === '') {
@@ -92,6 +160,28 @@ const validateCreateExpenseInput = (input: CreateExpenseInput): void => {
       '금액 및 환율은 0보다 커야 합니다.',
     );
   }
+
+  if (input.splitWithParticipantIds !== undefined) {
+    if (!Array.isArray(input.splitWithParticipantIds)) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'EXP_001',
+        '필수 입력값이 누락되었습니다.',
+        'splitWithParticipantIds는 문자열 배열이어야 합니다.',
+      );
+    }
+
+    for (const id of input.splitWithParticipantIds) {
+      if (typeof id !== 'string' || id.trim() === '') {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          'EXP_001',
+          '필수 입력값이 누락되었습니다.',
+          'splitWithParticipantIds 항목은 비어 있지 않은 문자열이어야 합니다.',
+        );
+      }
+    }
+  }
 };
 
 const validateUpdateExpenseInput = (input: UpdateExpenseInput): void => {
@@ -154,6 +244,28 @@ const validateUpdateExpenseInput = (input: UpdateExpenseInput): void => {
       '필수 입력값이 누락되었습니다.',
       '금액 및 환율은 0보다 커야 합니다.',
     );
+  }
+
+  if (input.splitWithParticipantIds !== undefined) {
+    if (!Array.isArray(input.splitWithParticipantIds)) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'EXP_001',
+        '필수 입력값이 누락되었습니다.',
+        'splitWithParticipantIds는 문자열 배열이어야 합니다.',
+      );
+    }
+
+    for (const id of input.splitWithParticipantIds) {
+      if (typeof id !== 'string' || id.trim() === '') {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          'EXP_001',
+          '필수 입력값이 누락되었습니다.',
+          'splitWithParticipantIds 항목은 비어 있지 않은 문자열이어야 합니다.',
+        );
+      }
+    }
   }
 };
 
@@ -269,13 +381,27 @@ export const expensesService = {
       });
     }
 
-    return expensesRepository.create(input);
+    const shareParticipantIds =
+      input.splitWithParticipantIds !== undefined &&
+      input.splitWithParticipantIds.length > 0
+        ? dedupePreserveOrder(input.splitWithParticipantIds)
+        : [input.payerParticipantId];
+
+    await validateParticipantsBelongToTrip(input.tripId, shareParticipantIds);
+
+    const created = await expensesRepository.createWithSummary(
+      input,
+      shareParticipantIds,
+    );
+
+    return mapExpenseToResponse(created);
   },
 
   async updateExpense(
     userId: string,
     expenseId: string,
     input: UpdateExpenseInput,
+    options: { replaceSplits: boolean },
   ) {
     validateUpdateExpenseInput(input);
 
@@ -298,11 +424,21 @@ export const expensesService = {
       );
     }
 
+    const before = await expensesRepository.findWithSummaryById(expenseId);
+    if (before === null) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        'EXP_007',
+        '지출을 찾을 수 없습니다.',
+        'expenseId에 해당하는 지출이 존재하지 않습니다.',
+      );
+    }
+
     if (input.payerParticipantId !== undefined) {
-      const participant = await expensesRepository.findParticipantById(
+      const p = await expensesRepository.findParticipantById(
         input.payerParticipantId,
       );
-      if (participant === null || participant.tripId !== expense.tripId) {
+      if (p === null || p.tripId !== expense.tripId) {
         throw new AppError(
           StatusCodes.BAD_REQUEST,
           'EXP_005',
@@ -321,7 +457,37 @@ export const expensesService = {
       });
     }
 
-    return expensesRepository.update(expenseId, input);
+    const scalarInput = { ...input };
+    delete scalarInput.splitWithParticipantIds;
+
+    const amountRelatedPatch =
+      input.amountKrw !== undefined ||
+      input.amountOriginal !== undefined ||
+      input.fxRateTripToKrw !== undefined;
+
+    let shareParticipantIds: string[] | null = null;
+
+    if (options.replaceSplits) {
+      const raw = input.splitWithParticipantIds ?? [];
+      shareParticipantIds = raw.length > 0 ? dedupePreserveOrder(raw) : [];
+      const mergedPayer =
+        input.payerParticipantId !== undefined
+          ? input.payerParticipantId
+          : before.payerParticipantId;
+      const toValidate =
+        shareParticipantIds.length > 0 ? shareParticipantIds : [mergedPayer];
+      await validateParticipantsBelongToTrip(before.tripId, toValidate);
+    } else if (before.expenseShares.length > 0 && amountRelatedPatch) {
+      shareParticipantIds = distinctShareParticipantIds(before.expenseShares);
+    }
+
+    const updated = await expensesRepository.updateWithSummary(
+      expenseId,
+      scalarInput,
+      shareParticipantIds,
+    );
+
+    return mapExpenseToResponse(updated);
   },
 
   async getExpenses(userId: string, tripId: string) {
@@ -353,7 +519,9 @@ export const expensesService = {
       );
     }
 
-    return expensesRepository.findManyByTripId(tripId);
+    const rows = await expensesRepository.findManyWithSummaryByTripId(tripId);
+
+    return rows.map(mapExpenseToResponse);
   },
 
   async getExpenseById(userId: string, expenseId: string) {
@@ -376,8 +544,8 @@ export const expensesService = {
       );
     }
 
-    const expense = await expensesRepository.findExpenseDetailById(expenseId);
-    if (expense === null) {
+    const row = await expensesRepository.findWithSummaryById(expenseId);
+    if (row === null) {
       throw new AppError(
         StatusCodes.NOT_FOUND,
         'EXP_007',
@@ -386,7 +554,7 @@ export const expensesService = {
       );
     }
 
-    return expense;
+    return mapExpenseToResponse(row);
   },
 
   async deleteExpense(userId: string, expenseId: string) {
