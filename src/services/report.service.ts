@@ -1,7 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
 
+import { EXPENSE_CATEGORY } from '../constants/category.js';
 import { AppError } from '../errors/app-error.js';
 import * as reportRepository from '../repositories/report.repository.js';
+import { generateAiReport } from '../utils/ai.utils.js';
 import { getDurationInDays } from '../utils/date.utils.js';
 
 export const getAiConsumptionReport = async (
@@ -47,40 +49,34 @@ export const getAiConsumptionReport = async (
     trip.startDate && trip.endDate
       ? getDurationInDays(trip.startDate, trip.endDate)
       : 1;
-  const dailyAverage = totalAmountKrw / days;
+  const dailyAverageKrw = totalAmountKrw / days;
 
   // 리포트 데이터 구성
+  const aiAnalysis = await generateAiReport({
+    totalAmountKrw,
+    expenseCount,
+    expenses: trip.expenses.map(e => ({
+      category: (e.category && EXPENSE_CATEGORY[e.category]) ?? '기타',
+      amount: Number(e.amountKrw),
+      title: e.title,
+    })),
+  });
+
+  const rawCategory = aiAnalysis.categoryInsights[0]?.category;
+  const mostSpentCategory =
+    rawCategory !== undefined && EXPENSE_CATEGORY[rawCategory] !== undefined
+      ? EXPENSE_CATEGORY[rawCategory]
+      : '기타';
+
   return {
     tripId: trip.id,
     generatedAt: new Date().toISOString(),
     statistics: {
       totalAmountKrw,
-      mostSpentCategory: '식비',
-      dailyAverageKrw: Math.round(dailyAverage),
+      mostSpentCategory,
+      dailyAverageKrw,
       expenseCount,
     },
-    report: {
-      title: '미식과 쇼핑의 경계에서',
-      consumptionStyle: '계획적인 미식가',
-      totalAnalysis:
-        '전반적으로 계획된 예산 내에서 소비하셨습니다. 특히 식비에 투자를 아끼지 않으면서도 교통비에서 절약한 모습이 인상적입니다.',
-      categoryInsights: [
-        {
-          category: '식비',
-          amountKrw: 850000.0,
-          insight:
-            '전체 지출의 68%를 차지합니다. 현지 맛집 탐방에 집중된 소비 패턴을 보입니다.',
-        },
-        {
-          category: '쇼핑',
-          amountKrw: 250000.0,
-          insight: '여행 마지막 날 기념품 구입에 지출이 집중되었습니다.',
-        },
-      ],
-      suggestions: [
-        '식비 비중이 높으므로 다음 여행에선 조식이 포함된 숙소를 고려해보세요.',
-        '현지 패스권을 미리 구입하여 교통비를 더 절감할 수 있습니다.',
-      ],
-    },
+    report: aiAnalysis,
   };
 };
