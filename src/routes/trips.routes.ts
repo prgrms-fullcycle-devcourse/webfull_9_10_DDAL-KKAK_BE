@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import * as reportController from '../controllers/report.controller.js';
 import * as settlementController from '../controllers/settlement.controller.js';
 import { tripController } from '../controllers/trips.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
@@ -23,5 +24,7 @@ router.get(
   '/:tripId/settlement/summary',
   settlementController.getMySettlementSummary,
 );
+
+router.get('/:tripId/report', reportController.getAiConsumptionReport);
 
 export default router;
