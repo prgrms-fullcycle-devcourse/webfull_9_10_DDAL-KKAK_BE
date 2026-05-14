@@ -6,6 +6,6 @@ if (typeof apiKey !== 'string' || apiKey.trim() === '') {
 
 const config = {
   apiKey,
-};
+} as const;
 
 export default config;
