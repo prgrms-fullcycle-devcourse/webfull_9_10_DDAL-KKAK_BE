@@ -10,6 +10,7 @@ export const tripRepository = {
         tripCurrencyCode: input.tripCurrencyCode,
         defaultFxMode: input.defaultFxMode ?? 'FIXED',
         fixedExchangeRate: input.fixedExchangeRate ?? null,
+        budgetKrw: input.budgetKrw ?? null,
         startDate:
           input.startDate !== null && input.startDate !== undefined
             ? new Date(input.startDate)
@@ -18,6 +19,14 @@ export const tripRepository = {
           input.endDate !== null && input.endDate !== undefined
             ? new Date(input.endDate)
             : null,
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   },
@@ -71,6 +80,9 @@ export const tripRepository = {
         ...(input.fixedExchangeRate !== undefined && {
           fixedExchangeRate: input.fixedExchangeRate,
         }),
+        ...(input.budgetKrw !== undefined && {
+          budgetKrw: input.budgetKrw,
+        }),
         ...(input.startDate !== undefined && {
           startDate:
             input.startDate !== null ? new Date(input.startDate) : null,
@@ -78,6 +90,14 @@ export const tripRepository = {
         ...(input.endDate !== undefined && {
           endDate: input.endDate !== null ? new Date(input.endDate) : null,
         }),
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   },
