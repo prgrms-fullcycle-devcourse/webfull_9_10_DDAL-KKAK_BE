@@ -10,8 +10,43 @@ import {
   deleteOcrJob,
   getOcrJob,
 } from '../services/ocr.service.js';
-import type { CreateExpenseInput } from '../types/expenses.types.js';
+import type {
+  CreateExpenseInput,
+  UpdateExpenseInput,
+} from '../types/expenses.types.js';
 import { sendSuccess } from '../utils/response.js';
+
+const normalizeSplitParticipantIds = (raw: unknown): string[] => {
+  if (raw === undefined || raw === null) {
+    return [];
+  }
+
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') {
+      const s = item.trim();
+      if (s !== '') {
+        out.push(s);
+      }
+    } else if (
+      typeof item === 'object' &&
+      item !== null &&
+      'participantId' in item
+    ) {
+      const s = String(
+        (item as { participantId: unknown }).participantId,
+      ).trim();
+      if (s !== '') {
+        out.push(s);
+      }
+    }
+  }
+
+  return out;
+};
 
 /** `authenticate` 미들웨어 이후 — `Request.user`(JwtPayload)의 `sub` 사용 */
 const getAuthenticatedUserId = (req: Request): string => {
@@ -115,6 +150,7 @@ export const createExpense = async (
       fxRateTripToKrw?: number;
       amountKrw?: number;
       receiptId?: string;
+      splitWithParticipantIds?: unknown;
     };
 
     const createInput: CreateExpenseInput = {
@@ -135,6 +171,12 @@ export const createExpense = async (
       String(payload.receiptId).trim() !== ''
     ) {
       createInput.receiptId = String(payload.receiptId);
+    }
+
+    if ('splitWithParticipantIds' in payload) {
+      createInput.splitWithParticipantIds = normalizeSplitParticipantIds(
+        payload.splitWithParticipantIds,
+      );
     }
 
     const createdExpense = await expensesService.createExpense(
@@ -183,9 +225,12 @@ export const updateExpense = async (
       fxRateTripToKrw?: number;
       amountKrw?: number;
       receiptId?: string | null;
+      splitWithParticipantIds?: unknown;
     };
 
-    const updateInput = {
+    const replaceSplits = 'splitWithParticipantIds' in payload;
+
+    const updateInput: UpdateExpenseInput = {
       ...(payload.payerParticipantId !== undefined && {
         payerParticipantId: String(payload.payerParticipantId),
       }),
@@ -212,10 +257,17 @@ export const updateExpense = async (
       }),
     };
 
+    if (replaceSplits) {
+      updateInput.splitWithParticipantIds = normalizeSplitParticipantIds(
+        payload.splitWithParticipantIds,
+      );
+    }
+
     const updatedExpense = await expensesService.updateExpense(
       userId,
       expenseId,
       updateInput,
+      { replaceSplits },
     );
 
     sendSuccess(
