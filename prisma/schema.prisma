@@ -96,7 +96,7 @@ model Trip {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner        User          @relation(fields: [ownerUserId], references: [id])
+  owner        User          @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   participants Participant[]
   receipts     Receipt[]
   expenses     Expense[]
