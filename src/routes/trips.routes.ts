@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import * as reportController from '../controllers/report.controller.js';
+import * as screenshotController from '../controllers/screenshot.controller.js';
 import * as settlementController from '../controllers/settlement.controller.js';
 import { tripController } from '../controllers/trips.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
@@ -26,5 +27,9 @@ router.get(
 );
 
 router.get('/:tripId/report', reportController.getAiConsumptionReport);
+router.post(
+  '/:tripId/report/screenshot',
+  screenshotController.generateReportScreenshot,
+);
 
 export default router;
